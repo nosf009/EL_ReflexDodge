@@ -6,13 +6,8 @@
     },
     "entries": [
         {
-            "key": "pftitletext",
-            "text": "POKER FACE",
-            "isDynamic": false
-        },
-        {
             "key": "pfsubtitletext",
-            "text": "How many odd cards can you find before the time runs out?",
+            "text": "Catch the right falling fruits and adapt quickly to changing rules to train cognitive flexibility.",
             "isDynamic": false
         },
         {
@@ -47,7 +42,7 @@
         },
         {
             "key": "pvbtnspaneltitletext",
-            "text": "PAUSED",
+            "text": "PAUSE",
             "isDynamic": false
         },
         {
@@ -81,11 +76,6 @@
             "isDynamic": false
         },
         {
-            "key": "retitletext",
-            "text": "WELL DONE",
-            "isDynamic": false
-        },
-        {
             "key": "rescorelabeltext",
             "text": "Score",
             "isDynamic": false
@@ -102,12 +92,12 @@
         },
         {
             "key": "pftutinfotext",
-            "text": "Find the card that stands out and tap it!",
+            "text": "Tap the correct fruits as they fall and collect only the ones marked on the bucket.",
             "isDynamic": false
         },
         {
             "key": "temodalpaneltext",
-            "text": "Good job. Pay attention to differences in patterns in order to spot them quickly.",
+            "text": "Well done. Pay attention to the different fruit types to spot them quickly and pick the right ones.",
             "isDynamic": false
         },
         {

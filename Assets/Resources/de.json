@@ -6,13 +6,8 @@
     },
     "entries": [
         {
-            "key": "pftitletext",
-            "text": "POKER FACE",
-            "isDynamic": false
-        },
-        {
             "key": "pfsubtitletext",
-            "text": "Wie viele fremde Karten findest du, bevor die Zeit abläuft?",
+            "text": "Fange die richtigen fallenden Früchte und passe dich schnell wechselnden Regeln an.",
             "isDynamic": false
         },
         {
@@ -22,7 +17,7 @@
         },
         {
             "key": "pftutbtntext",
-            "text": "SO SPIELST DU",
+            "text": "ANLEITUNG",
             "isDynamic": false
         },
         {
@@ -52,7 +47,7 @@
         },
         {
             "key": "pvresumebtntext",
-            "text": "Weiter",
+            "text": "Fortsetzen",
             "isDynamic": false
         },
         {
@@ -72,17 +67,12 @@
         },
         {
             "key": "pvtutorialbtntext",
-            "text": "So spielst du",
+            "text": "Anleitung",
             "isDynamic": false
         },
         {
             "key": "pvexitbtntext",
             "text": "Spiel beenden",
-            "isDynamic": false
-        },
-        {
-            "key": "retitletext",
-            "text": "GUT GEMACHT",
             "isDynamic": false
         },
         {
@@ -92,7 +82,7 @@
         },
         {
             "key": "replayagainbtntext",
-            "text": "Weiter",
+            "text": "Weiter spielen",
             "isDynamic": false
         },
         {
@@ -102,12 +92,12 @@
         },
         {
             "key": "pftutinfotext",
-            "text": "Finde die Karte, die anders ist, und tippe sie an!",
+            "text": "Tippe auf die richtigen fallenden Früchte und sammle nur die im Eimer markierten.",
             "isDynamic": false
         },
         {
             "key": "temodalpaneltext",
-            "text": "Gut gemacht. Achte auf Musterunterschiede, um sie schnell zu erkennen.",
+            "text": "Gut gemacht. Achte auf die verschiedenen Fruchttypen, um sie schnell zu erkennen und die richtigen auszuwählen.",
             "isDynamic": false
         },
         {

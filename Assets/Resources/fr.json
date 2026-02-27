@@ -6,13 +6,8 @@
     },
     "entries": [
         {
-            "key": "pftitletext",
-            "text": "POKER FACE",
-            "isDynamic": false
-        },
-        {
             "key": "pfsubtitletext",
-            "text": "Combien de cartes différentes trouves-tu avant la fin du temps ?",
+            "text": "Attrape les bons fruits et adapte toi rapidement aux règles changeantes.",
             "isDynamic": false
         },
         {
@@ -62,7 +57,7 @@
         },
         {
             "key": "pvrestartbtntext",
-            "text": "Rejouer",
+            "text": "Recommencer",
             "isDynamic": false
         },
         {
@@ -77,12 +72,7 @@
         },
         {
             "key": "pvexitbtntext",
-            "text": "Quitter jeu",
-            "isDynamic": false
-        },
-        {
-            "key": "retitletext",
-            "text": "BRAVO",
+            "text": "Quitter le jeu",
             "isDynamic": false
         },
         {
@@ -102,12 +92,12 @@
         },
         {
             "key": "pftutinfotext",
-            "text": "Trouve la carte qui diffère et touche-la !",
+            "text": "Tape sur les bons fruits qui tombent et collecte uniquement ceux indiqués sur le seau.",
             "isDynamic": false
         },
         {
             "key": "temodalpaneltext",
-            "text": "Bien joué. Observe les différences de motifs pour les repérer vite.",
+            "text": "Bien joué. Fais attention aux différents types de fruits pour les repérer rapidement et choisir les bons.",
             "isDynamic": false
         },
         {

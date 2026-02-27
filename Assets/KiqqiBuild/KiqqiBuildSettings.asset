@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fd0eca44aacaec42947110ccfa115b6, type: 3}
+  m_Name: KiqqiBuildSettings
+  m_EditorClassIdentifier: 
+  buildRootPath: D:/BUILDS/b2-2
+  projectRootPath: D:\_PROJECTS\__GIT\__ELG\__GAMES\ColorAction
+  artSourceFolderName: _art
+  verifyBuilds: 0
+  copyArtFolders: 0
+  createZipArchives: 0
+  cleanTempOnComplete: 1
+  buildTimeoutSeconds: 600
+  gameConfig:
+    gameId: coloraction
+    displayName: Color Action
+    mobileBuildProfile: {fileID: 11400000, guid: b5c9ffed692aa494ca130564cc79a131, type: 2}
+    desktopBuildProfile: {fileID: 11400000, guid: fa128369dc7a1904b8caf937fbaf21cf, type: 2}
+    artFolderName: _art

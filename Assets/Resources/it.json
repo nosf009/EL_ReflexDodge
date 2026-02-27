@@ -6,13 +6,8 @@
     },
     "entries": [
         {
-            "key": "pftitletext",
-            "text": "POKER FACE",
-            "isDynamic": false
-        },
-        {
             "key": "pfsubtitletext",
-            "text": "Quante carte diverse trovi prima che il tempo finisca?",
+            "text": "Raccogli i frutti giusti e adattati rapidamente alle regole che cambiano.",
             "isDynamic": false
         },
         {
@@ -22,7 +17,7 @@
         },
         {
             "key": "pftutbtntext",
-            "text": "COME SI GIOCA",
+            "text": "COME GIOCARE",
             "isDynamic": false
         },
         {
@@ -72,17 +67,12 @@
         },
         {
             "key": "pvtutorialbtntext",
-            "text": "Come si gioca",
+            "text": "Come giocare",
             "isDynamic": false
         },
         {
             "key": "pvexitbtntext",
             "text": "Esci dal gioco",
-            "isDynamic": false
-        },
-        {
-            "key": "retitletext",
-            "text": "OTTIMO",
             "isDynamic": false
         },
         {
@@ -92,7 +82,7 @@
         },
         {
             "key": "replayagainbtntext",
-            "text": "Avanti",
+            "text": "Continua",
             "isDynamic": false
         },
         {
@@ -102,12 +92,12 @@
         },
         {
             "key": "pftutinfotext",
-            "text": "Trova la carta diversa e toccala!",
+            "text": "Tocca i frutti giusti che cadono e raccogli solo quelli indicati sul secchio.",
             "isDynamic": false
         },
         {
             "key": "temodalpaneltext",
-            "text": "Bravo. Nota i cambi nei motivi per riconoscerli più in fretta.",
+            "text": "Ottimo lavoro. Presta attenzione ai diversi tipi di frutta per riconoscerli velocemente e scegliere quelli giusti.",
             "isDynamic": false
         },
         {
