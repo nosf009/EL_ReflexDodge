@@ -12669,7 +12669,7 @@ GameObject:
   - component: {fileID: 425963665}
   - component: {fileID: 425963664}
   m_Layer: 5
-  m_Name: pfSkipTutBtnText
+  m_Name: pfskiptutbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12731,7 +12731,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: e68c1a184c0c92145b8c8641c9ba1549, type: 3}
-    m_FontSize: 40
+    m_FontSize: 36
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 2
@@ -24813,7 +24813,7 @@ GameObject:
   - component: {fileID: 798539065}
   - component: {fileID: 798539064}
   m_Layer: 5
-  m_Name: gvScoreLabelText
+  m_Name: gvscorelabeltext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -31508,7 +31508,7 @@ GameObject:
   - component: {fileID: 1050327091}
   - component: {fileID: 1050327093}
   m_Layer: 5
-  m_Name: pfTutInfoText
+  m_Name: pftutinfotext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -31676,7 +31676,6 @@ GameObject:
   - component: {fileID: 1068752535}
   - component: {fileID: 1068752537}
   - component: {fileID: 1068752536}
-  - component: {fileID: 1068752538}
   m_Layer: 5
   m_Name: pfSkipTutBtnText
   m_TagString: Untagged
@@ -31745,21 +31744,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1068752534}
   m_CullTransparentMesh: 1
---- !u!114 &1068752538
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1068752534}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc44e1b11b65b6248befcf55111fb610, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  isDynamic: 0
-  localizationKey: pfskiptutbtntext
-  autoApply: 1
 --- !u!1 &1070833056
 GameObject:
   m_ObjectHideFlags: 0
@@ -61394,7 +61378,7 @@ GameObject:
   - component: {fileID: 2111432213}
   - component: {fileID: 2111432212}
   m_Layer: 5
-  m_Name: pfTimeLabelText
+  m_Name: pftimelabeltext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -61608,7 +61592,6 @@ GameObject:
   - component: {fileID: 2136202491}
   - component: {fileID: 2136202493}
   - component: {fileID: 2136202492}
-  - component: {fileID: 2136202494}
   m_Layer: 5
   m_Name: gvScoreLabelText
   m_TagString: Untagged
@@ -61677,21 +61660,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2136202490}
   m_CullTransparentMesh: 1
---- !u!114 &2136202494
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2136202490}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc44e1b11b65b6248befcf55111fb610, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  isDynamic: 0
-  localizationKey: gvscorelabeltext
-  autoApply: 1
 --- !u!1 &2140140213
 GameObject:
   m_ObjectHideFlags: 0
@@ -66932,7 +66900,7 @@ GameObject:
   - component: {fileID: 9213437021261602830}
   - component: {fileID: 9213437021261602831}
   m_Layer: 5
-  m_Name: pfPlayBtnText
+  m_Name: pfplaybtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -66951,7 +66919,7 @@ GameObject:
   - component: {fileID: 1911110234097167089}
   - component: {fileID: 4278095129090918520}
   m_Layer: 5
-  m_Name: teModalPanelText
+  m_Name: temodalpaneltext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -67205,7 +67173,7 @@ GameObject:
   - component: {fileID: 4358592835978811664}
   - component: {fileID: 8612342097789634052}
   m_Layer: 0
-  m_Name: pfExitBtnText
+  m_Name: pfexitbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -67489,7 +67457,7 @@ GameObject:
   - component: {fileID: 1303195428859592048}
   - component: {fileID: 8110937141889398118}
   m_Layer: 5
-  m_Name: teContinueBtnText
+  m_Name: tecontinuebtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -67764,7 +67732,7 @@ GameObject:
   - component: {fileID: 1820885538196337803}
   - component: {fileID: 8984415370735786009}
   m_Layer: 5
-  m_Name: pvRestartBtnText
+  m_Name: pvrestartbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -68139,7 +68107,7 @@ GameObject:
   - component: {fileID: 1556179903963442484}
   - component: {fileID: 7565300963899599940}
   m_Layer: 5
-  m_Name: reContinueBtnText
+  m_Name: recontinuebtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -68405,7 +68373,7 @@ GameObject:
   - component: {fileID: 561370550399827264}
   - component: {fileID: 5932510064503412544}
   m_Layer: 5
-  m_Name: pfSubtitleText
+  m_Name: pfsubtitletext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -69374,8 +69342,9 @@ GameObject:
   - component: {fileID: 5517445567486274002}
   - component: {fileID: 8056913529285006224}
   - component: {fileID: 6660004503376430709}
+  - component: {fileID: 8056913529285006225}
   m_Layer: 5
-  m_Name: pvBtnsPanelTitleText
+  m_Name: pvbtnspaneltitletext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -69658,7 +69627,7 @@ GameObject:
   - component: {fileID: 1985715651625916734}
   - component: {fileID: 8807220637457815095}
   m_Layer: 5
-  m_Name: reScoreLabelText
+  m_Name: rescorelabeltext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -69858,7 +69827,7 @@ GameObject:
   - component: {fileID: 3519455529456754866}
   - component: {fileID: 7359326339166450398}
   m_Layer: 5
-  m_Name: rePlayAgainBtnText
+  m_Name: replayagainbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -76532,7 +76501,7 @@ GameObject:
   - component: {fileID: 366554609756755416}
   - component: {fileID: 8611187452697692455}
   m_Layer: 5
-  m_Name: pvTutorialBtnText
+  m_Name: pvtutorialbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -76607,7 +76576,7 @@ GameObject:
   - component: {fileID: 5388886991130847282}
   - component: {fileID: 6945571236017639170}
   m_Layer: 5
-  m_Name: pvExitBtnText
+  m_Name: pvexitbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -76641,7 +76610,7 @@ GameObject:
   - component: {fileID: 5448438453090947353}
   - component: {fileID: 6961857643041621317}
   m_Layer: 5
-  m_Name: pvLevelSelectBtnText
+  m_Name: pvlevelselectbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -77217,7 +77186,7 @@ GameObject:
   - component: {fileID: 7868542534057606535}
   - component: {fileID: 7868542534057606536}
   m_Layer: 5
-  m_Name: pfTutBtnText
+  m_Name: pftutbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -77386,6 +77355,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4187382058622170984}
   m_CullTransparentMesh: 1
+--- !u!114 &8056913529285006225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4187382058622170984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc44e1b11b65b6248befcf55111fb610, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDynamic: 0
+  localizationKey: pvbtnspaneltitletext
+  autoApply: 1
 --- !u!1 &8063916401799923082
 GameObject:
   m_ObjectHideFlags: 0
@@ -77495,7 +77479,7 @@ GameObject:
   - component: {fileID: 254497793431399293}
   - component: {fileID: 8119472220496853380}
   m_Layer: 5
-  m_Name: pvMuteSoundBtnText
+  m_Name: pvmutesoundbtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -78032,7 +78016,7 @@ GameObject:
   - component: {fileID: 7592993580963905739}
   - component: {fileID: 8822123262106866843}
   m_Layer: 5
-  m_Name: pvResumeBtnText
+  m_Name: pvresumebtntext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
