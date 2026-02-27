@@ -1,0 +1,21 @@
+{
+  "defaultLang": "en",
+  "available": [
+    {
+      "code": "en",
+      "entry": { "staticUrl": "https://kiqqi.com/elml/ui_texts_en.json", "dynamicUrl": "" }
+    },
+    {
+      "code": "de",
+      "entry": { "staticUrl": "https://kiqqi.com/elml/ui_texts_de.json", "dynamicUrl": "" }
+    },
+    {
+      "code": "it",
+      "entry": { "staticUrl": "https://kiqqi.com/elml/ui_texts_it.json", "dynamicUrl": "" }
+    },
+    {
+      "code": "fr",
+      "entry": { "staticUrl": "https://kiqqi.com/elml/ui_texts_fr.json", "dynamicUrl": "" }
+    }
+  ]
+}

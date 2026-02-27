@@ -1,0 +1,119 @@
+{
+    "metadata": {
+        "language": "de",
+        "generatedAt": "2025-12-02T13:57:52Z",
+        "sceneCount": 1
+    },
+    "entries": [
+        {
+            "key": "pftitletext",
+            "text": "POKER FACE",
+            "isDynamic": false
+        },
+        {
+            "key": "pfsubtitletext",
+            "text": "Wie viele fremde Karten findest du, bevor die Zeit abläuft?",
+            "isDynamic": false
+        },
+        {
+            "key": "pfplaybtntext",
+            "text": "SPIELEN",
+            "isDynamic": false
+        },
+        {
+            "key": "pftutbtntext",
+            "text": "SO SPIELST DU",
+            "isDynamic": false
+        },
+        {
+            "key": "pfexitbtntext",
+            "text": "BEENDEN",
+            "isDynamic": false
+        },
+        {
+            "key": "pftimelabeltext",
+            "text": "Zeit",
+            "isDynamic": false
+        },
+        {
+            "key": "gvscorelabeltext",
+            "text": "Punkte",
+            "isDynamic": false
+        },
+        {
+            "key": "pfskiptutbtntext",
+            "text": "Überspringen",
+            "isDynamic": false
+        },
+        {
+            "key": "pvbtnspaneltitletext",
+            "text": "PAUSE",
+            "isDynamic": false
+        },
+        {
+            "key": "pvresumebtntext",
+            "text": "Weiter",
+            "isDynamic": false
+        },
+        {
+            "key": "pvlevelselectbtntext",
+            "text": "Level wählen",
+            "isDynamic": false
+        },
+        {
+            "key": "pvrestartbtntext",
+            "text": "Neu starten",
+            "isDynamic": false
+        },
+        {
+            "key": "pvmutesoundbtntext",
+            "text": "Ton",
+            "isDynamic": false
+        },
+        {
+            "key": "pvtutorialbtntext",
+            "text": "So spielst du",
+            "isDynamic": false
+        },
+        {
+            "key": "pvexitbtntext",
+            "text": "Spiel beenden",
+            "isDynamic": false
+        },
+        {
+            "key": "retitletext",
+            "text": "GUT GEMACHT",
+            "isDynamic": false
+        },
+        {
+            "key": "rescorelabeltext",
+            "text": "Punkte",
+            "isDynamic": false
+        },
+        {
+            "key": "replayagainbtntext",
+            "text": "Weiter",
+            "isDynamic": false
+        },
+        {
+            "key": "recontinuebtntext",
+            "text": "Mehr Spiele",
+            "isDynamic": false
+        },
+        {
+            "key": "pftutinfotext",
+            "text": "Finde die Karte, die anders ist, und tippe sie an!",
+            "isDynamic": false
+        },
+        {
+            "key": "temodalpaneltext",
+            "text": "Gut gemacht. Achte auf Musterunterschiede, um sie schnell zu erkennen.",
+            "isDynamic": false
+        },
+        {
+            "key": "tecontinuebtntext",
+            "text": "Weiter",
+            "isDynamic": false
+        }
+    ]
+}

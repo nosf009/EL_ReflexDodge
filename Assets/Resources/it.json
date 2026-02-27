@@ -1,0 +1,119 @@
+{
+    "metadata": {
+        "language": "it",
+        "generatedAt": "2025-12-02T13:57:52Z",
+        "sceneCount": 1
+    },
+    "entries": [
+        {
+            "key": "pftitletext",
+            "text": "POKER FACE",
+            "isDynamic": false
+        },
+        {
+            "key": "pfsubtitletext",
+            "text": "Quante carte diverse trovi prima che il tempo finisca?",
+            "isDynamic": false
+        },
+        {
+            "key": "pfplaybtntext",
+            "text": "GIOCA",
+            "isDynamic": false
+        },
+        {
+            "key": "pftutbtntext",
+            "text": "COME SI GIOCA",
+            "isDynamic": false
+        },
+        {
+            "key": "pfexitbtntext",
+            "text": "ESCI",
+            "isDynamic": false
+        },
+        {
+            "key": "pftimelabeltext",
+            "text": "Tempo",
+            "isDynamic": false
+        },
+        {
+            "key": "gvscorelabeltext",
+            "text": "Punti",
+            "isDynamic": false
+        },
+        {
+            "key": "pfskiptutbtntext",
+            "text": "Salta",
+            "isDynamic": false
+        },
+        {
+            "key": "pvbtnspaneltitletext",
+            "text": "PAUSA",
+            "isDynamic": false
+        },
+        {
+            "key": "pvresumebtntext",
+            "text": "Riprendi",
+            "isDynamic": false
+        },
+        {
+            "key": "pvlevelselectbtntext",
+            "text": "Scegli livello",
+            "isDynamic": false
+        },
+        {
+            "key": "pvrestartbtntext",
+            "text": "Ricomincia",
+            "isDynamic": false
+        },
+        {
+            "key": "pvmutesoundbtntext",
+            "text": "Audio",
+            "isDynamic": false
+        },
+        {
+            "key": "pvtutorialbtntext",
+            "text": "Come si gioca",
+            "isDynamic": false
+        },
+        {
+            "key": "pvexitbtntext",
+            "text": "Esci dal gioco",
+            "isDynamic": false
+        },
+        {
+            "key": "retitletext",
+            "text": "OTTIMO",
+            "isDynamic": false
+        },
+        {
+            "key": "rescorelabeltext",
+            "text": "Punti",
+            "isDynamic": false
+        },
+        {
+            "key": "replayagainbtntext",
+            "text": "Avanti",
+            "isDynamic": false
+        },
+        {
+            "key": "recontinuebtntext",
+            "text": "Altri giochi",
+            "isDynamic": false
+        },
+        {
+            "key": "pftutinfotext",
+            "text": "Trova la carta diversa e toccala!",
+            "isDynamic": false
+        },
+        {
+            "key": "temodalpaneltext",
+            "text": "Bravo. Nota i cambi nei motivi per riconoscerli più in fretta.",
+            "isDynamic": false
+        },
+        {
+            "key": "tecontinuebtntext",
+            "text": "Continua",
+            "isDynamic": false
+        }
+    ]
+}

@@ -1,0 +1,119 @@
+{
+    "metadata": {
+        "language": "fr",
+        "generatedAt": "2025-12-02T13:57:52Z",
+        "sceneCount": 1
+    },
+    "entries": [
+        {
+            "key": "pftitletext",
+            "text": "POKER FACE",
+            "isDynamic": false
+        },
+        {
+            "key": "pfsubtitletext",
+            "text": "Combien de cartes différentes trouves-tu avant la fin du temps ?",
+            "isDynamic": false
+        },
+        {
+            "key": "pfplaybtntext",
+            "text": "JOUER",
+            "isDynamic": false
+        },
+        {
+            "key": "pftutbtntext",
+            "text": "COMMENT JOUER",
+            "isDynamic": false
+        },
+        {
+            "key": "pfexitbtntext",
+            "text": "QUITTER",
+            "isDynamic": false
+        },
+        {
+            "key": "pftimelabeltext",
+            "text": "Temps",
+            "isDynamic": false
+        },
+        {
+            "key": "gvscorelabeltext",
+            "text": "Score",
+            "isDynamic": false
+        },
+        {
+            "key": "pfskiptutbtntext",
+            "text": "Passer",
+            "isDynamic": false
+        },
+        {
+            "key": "pvbtnspaneltitletext",
+            "text": "PAUSE",
+            "isDynamic": false
+        },
+        {
+            "key": "pvresumebtntext",
+            "text": "Reprendre",
+            "isDynamic": false
+        },
+        {
+            "key": "pvlevelselectbtntext",
+            "text": "Choix du niveau",
+            "isDynamic": false
+        },
+        {
+            "key": "pvrestartbtntext",
+            "text": "Rejouer",
+            "isDynamic": false
+        },
+        {
+            "key": "pvmutesoundbtntext",
+            "text": "Son",
+            "isDynamic": false
+        },
+        {
+            "key": "pvtutorialbtntext",
+            "text": "Comment jouer",
+            "isDynamic": false
+        },
+        {
+            "key": "pvexitbtntext",
+            "text": "Quitter jeu",
+            "isDynamic": false
+        },
+        {
+            "key": "retitletext",
+            "text": "BRAVO",
+            "isDynamic": false
+        },
+        {
+            "key": "rescorelabeltext",
+            "text": "Score",
+            "isDynamic": false
+        },
+        {
+            "key": "replayagainbtntext",
+            "text": "Continuer",
+            "isDynamic": false
+        },
+        {
+            "key": "recontinuebtntext",
+            "text": "Plus de jeux",
+            "isDynamic": false
+        },
+        {
+            "key": "pftutinfotext",
+            "text": "Trouve la carte qui diffère et touche-la !",
+            "isDynamic": false
+        },
+        {
+            "key": "temodalpaneltext",
+            "text": "Bien joué. Observe les différences de motifs pour les repérer vite.",
+            "isDynamic": false
+        },
+        {
+            "key": "tecontinuebtntext",
+            "text": "Continuer",
+            "isDynamic": false
+        }
+    ]
+}

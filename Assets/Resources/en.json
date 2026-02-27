@@ -1,0 +1,119 @@
+{
+    "metadata": {
+        "language": "en",
+        "generatedAt": "2025-12-02T13:57:52Z",
+        "sceneCount": 1
+    },
+    "entries": [
+        {
+            "key": "pftitletext",
+            "text": "POKER FACE",
+            "isDynamic": false
+        },
+        {
+            "key": "pfsubtitletext",
+            "text": "How many odd cards can you find before the time runs out?",
+            "isDynamic": false
+        },
+        {
+            "key": "pfplaybtntext",
+            "text": "PLAY",
+            "isDynamic": false
+        },
+        {
+            "key": "pftutbtntext",
+            "text": "HOW TO PLAY",
+            "isDynamic": false
+        },
+        {
+            "key": "pfexitbtntext",
+            "text": "EXIT",
+            "isDynamic": false
+        },
+        {
+            "key": "pftimelabeltext",
+            "text": "Time",
+            "isDynamic": false
+        },
+        {
+            "key": "gvscorelabeltext",
+            "text": "Score",
+            "isDynamic": false
+        },
+        {
+            "key": "pfskiptutbtntext",
+            "text": "Skip",
+            "isDynamic": false
+        },
+        {
+            "key": "pvbtnspaneltitletext",
+            "text": "PAUSED",
+            "isDynamic": false
+        },
+        {
+            "key": "pvresumebtntext",
+            "text": "Resume",
+            "isDynamic": false
+        },
+        {
+            "key": "pvlevelselectbtntext",
+            "text": "Level select",
+            "isDynamic": false
+        },
+        {
+            "key": "pvrestartbtntext",
+            "text": "Restart",
+            "isDynamic": false
+        },
+        {
+            "key": "pvmutesoundbtntext",
+            "text": "Sound",
+            "isDynamic": false
+        },
+        {
+            "key": "pvtutorialbtntext",
+            "text": "How to play",
+            "isDynamic": false
+        },
+        {
+            "key": "pvexitbtntext",
+            "text": "Exit game",
+            "isDynamic": false
+        },
+        {
+            "key": "retitletext",
+            "text": "WELL DONE",
+            "isDynamic": false
+        },
+        {
+            "key": "rescorelabeltext",
+            "text": "Score",
+            "isDynamic": false
+        },
+        {
+            "key": "replayagainbtntext",
+            "text": "Play On",
+            "isDynamic": false
+        },
+        {
+            "key": "recontinuebtntext",
+            "text": "More Games",
+            "isDynamic": false
+        },
+        {
+            "key": "pftutinfotext",
+            "text": "Find the card that stands out and tap it!",
+            "isDynamic": false
+        },
+        {
+            "key": "temodalpaneltext",
+            "text": "Good job. Pay attention to differences in patterns in order to spot them quickly.",
+            "isDynamic": false
+        },
+        {
+            "key": "tecontinuebtntext",
+            "text": "Continue",
+            "isDynamic": false
+        }
+    ]
+}
