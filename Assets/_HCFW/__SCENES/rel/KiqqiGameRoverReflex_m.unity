@@ -69342,7 +69342,6 @@ GameObject:
   - component: {fileID: 5517445567486274002}
   - component: {fileID: 8056913529285006224}
   - component: {fileID: 6660004503376430709}
-  - component: {fileID: 8056913529285006225}
   m_Layer: 5
   m_Name: pvbtnspaneltitletext
   m_TagString: Untagged
@@ -77355,21 +77354,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4187382058622170984}
   m_CullTransparentMesh: 1
---- !u!114 &8056913529285006225
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4187382058622170984}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc44e1b11b65b6248befcf55111fb610, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  isDynamic: 0
-  localizationKey: pvbtnspaneltitletext
-  autoApply: 1
 --- !u!1 &8063916401799923082
 GameObject:
   m_ObjectHideFlags: 0

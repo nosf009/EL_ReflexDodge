@@ -72,23 +72,19 @@ namespace Kiqqi.Framework
 
         private void ApplyMute()
         {
-            AudioListener.pause = muted;
             AudioListener.volume = muted ? 0f : 1f;
 
             if (musicSource)
             {
                 musicSource.mute = muted;
-                musicSource.volume = muted ? 0f : musicVolume;
+                musicSource.volume = musicVolume;
 
                 if (!muted && musicSource.clip != null && !musicSource.isPlaying)
-                {
                     musicSource.Play();
-                }
             }
+
             if (sfxSource)
-            {
                 sfxSource.mute = muted;
-            }
         }
 
         // --------------------------------------------------------------

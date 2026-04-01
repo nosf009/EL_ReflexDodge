@@ -437,8 +437,7 @@ namespace Kiqqi.Framework
             if (!levelMgr) return;
 
             int penalty = levelMgr.GetHitPenalty(currentLevel);
-            sessionScore -= penalty;
-            masterGame.AddScore(-penalty);
+            sessionScore = Mathf.Max(0, sessionScore - penalty);
 
             currentStreak = 0;
 
@@ -449,7 +448,7 @@ namespace Kiqqi.Framework
 
             KiqqiAppManager.Instance.Audio.PlaySfx("answerwrong");
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Player HIT! Penalty: -{penalty}");
+            Debug.Log($"[KiqqiReflexDodgeManager] Player HIT! Penalty: -{penalty}, sessionScore={sessionScore}");
         }
 
         protected virtual void OnSuccessfulDodge(DangerZone zone)
@@ -464,7 +463,6 @@ namespace Kiqqi.Framework
 
             int earnedScore = Mathf.RoundToInt(baseScore * multiplier);
             sessionScore += earnedScore;
-            masterGame.AddScore(earnedScore);
 
             if (view)
             {
@@ -473,7 +471,7 @@ namespace Kiqqi.Framework
 
             KiqqiAppManager.Instance.Audio.PlaySfx("answercorrect");
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Dodge SUCCESS! +{earnedScore} (streak: {currentStreak}, mult: {multiplier}x)");
+            Debug.Log($"[KiqqiReflexDodgeManager] Dodge SUCCESS! +{earnedScore} (streak: {currentStreak}, mult: {multiplier}x), sessionScore={sessionScore}");
         }
 
         public virtual void HandlePlayerTap(Vector2 screenPosition)

@@ -43,14 +43,6 @@ namespace Kiqqi.Framework
                     game.ResumeRequested = true;
                     game.State = KiqqiGameManager.GameState.Playing;
 
-                    // Set transition type to Fade before showing
-                    var pokerFaceView = app.UI.GetView<KiqqiPokerFaceView>();
-                    if (pokerFaceView != null)
-                    {
-                        pokerFaceView.transitionType = TransitionType.Fade;
-                        Debug.Log($"[PauseView] PokerFaceView transitionType set to: {pokerFaceView.transitionType}");
-                    }
-
                     if (game.currentMiniGame != null)
                     {
                         var viewType = game.currentMiniGame.GetAssociatedViewType();
@@ -72,12 +64,6 @@ namespace Kiqqi.Framework
                 levelSelectButton.onClick.AddListener(() =>
                 {
                     var app = KiqqiAppManager.Instance;
-                    var pokerFaceView = app.UI.GetView<KiqqiPokerFaceView>();
-                    if (pokerFaceView != null)
-                    {
-                        pokerFaceView.transitionType = KiqqiUIView.TransitionType.Fade;
-                        Debug.Log($"[PauseView] PokerFaceView transitionType set to: {pokerFaceView.transitionType}");
-                    }
                     var levels = app.Levels;
 
                     if (!levels.hasLevelSelect)
