@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Coffee.UIExtensions;
+
 namespace Kiqqi.Framework
 {
     public enum DangerZoneBehavior
@@ -11,11 +13,24 @@ namespace Kiqqi.Framework
         Chasing
     }
 
+    /// <summary>
+    /// Represents one active meteor threat: shadow ring + flying meteor visual + lifecycle state.
+    /// </summary>
     public class DangerZone
     {
+        // Root GO (parent of Shadow and Meteor children)
         public GameObject gameObject;
         public RectTransform rectTransform;
-        public Image image;
+
+        // Shadow ring child - warning indicator on the ground
+        public RectTransform shadowRect;
+        public Image shadowImage;
+
+        // Meteor child - base rock Image
+        public RectTransform meteorRect;
+        public Image meteorBaseImage;
+
+        // Lifecycle
         public float warningDuration;
         public float elapsedTime;
         public bool isActive;
@@ -25,54 +40,121 @@ namespace Kiqqi.Framework
         public Vector2 chaseTarget;
         public float chaseSpeed;
 
+        // Meteor fly-in data
+        public float meteorFlyDuration;
+        public float meteorElapsed;
+        public bool meteorArrived;
+
+        // Phase tracking
+        public bool  isFlashing;    // true during initial warning flash phase
+        public float flashElapsed;  // elapsed within flash phase
+        public float impactElapsed; // elapsed after impact (for cleanup)
+
         public void Reset()
         {
             if (gameObject) gameObject.SetActive(false);
-            elapsedTime = 0f;
-            isActive = false;
-            isDangerous = false;
-            chaseTarget = Vector2.zero;
+            elapsedTime   = 0f;
+            meteorElapsed = 0f;
+            flashElapsed  = 0f;
+            impactElapsed = 0f;
+            isActive      = false;
+            isDangerous   = false;
+            isFlashing    = false;
+            meteorArrived = false;
+            chaseTarget   = Vector2.zero;
         }
     }
 
     public class KiqqiRoverReflexManager : KiqqiMiniGameManagerBase
     {
+        // ─── Inspector ───────────────────────────────────────────────────────────
+
         [Header("Level Manager Reference")]
         [Tooltip("Reference to level manager component")]
         public KiqqiRoverReflexLevelManager levelMgr;
 
         [Header("Scene References")]
-        [Tooltip("Player circle GameObject")]
+        [Tooltip("Player rover GameObject")]
         public GameObject playerObject;
 
         [Tooltip("Playable area bounds (for zone spawning)")]
         public RectTransform playableArea;
 
-        [Tooltip("Parent transform holding inactive zone GameObjects")]
+        [Tooltip("Parent transform holding inactive zone GameObjects (each must have Shadow + Meteor children)")]
         public Transform zonePoolParent;
 
-        [Header("Visual Settings")]
-        public Color zoneWarningColor = new Color(1f, 0f, 0f, 0.3f);
-        public Color zoneDangerousColor = new Color(1f, 0f, 0f, 0.8f);
-        public Color playerColor = Color.green;
+        [Tooltip("Parent transform used as container when spawning impact particles at runtime")]
+        public Transform impactPoolParent;
+
+        [Tooltip("Impact particle GO to instantiate on meteor hit - keep it SetActive(false) in the scene as a template")]
+        public GameObject impactParticleTemplate;
+
+        [Header("Rover Art")]
+        [Tooltip("Sprite for the rover body - assign Astro Madness_rover.png")]
+        public Sprite roverSprite;
+
+        [Tooltip("Destination marker RectTransform shown at the tap target (sibling of Player inside playableArea or rrRoverReflexGameView)")]
+        public RectTransform destinationMarker;
+
+        [Tooltip("Sprite for the destination marker - assign Astro Madness_rover _ destination.png")]
+        public Sprite destinationMarkerSprite;
+
+        [Header("Meteor Art")]
+        [Tooltip("Sprite for the asteroid body - assign Astro Madness_asteroid _ base.png")]
+        public Sprite meteorBaseSprite;
+
+        [Tooltip("Sprite for the shadow/warning ring - assign Astro Madness_asteroid _ target.png")]
+        public Sprite shadowRingSprite;
+
+        [Header("Zone Visual Settings")]
+        public Color zoneWarningColor   = new Color(1f, 0.15f, 0.15f, 0.5f);
+        public Color zoneDangerousColor = new Color(1f, 0f,    0f,    0.9f);
+
+        [Header("Warning Flash")]
+        [Tooltip("Number of on/off flashes before meteor appears")]
+        [Range(2, 10)]
+        public int warningFlashCount = 5;
+
+        [Tooltip("Total duration of the flash warning sequence (seconds)")]
+        public float warningFlashDuration = 0.75f;
 
         [Header("Movement Settings")]
         [Tooltip("Use smooth movement instead of instant teleport")]
         public bool useSmoothMovement = true;
-        [Tooltip("Speed for smooth movement (units per second)")]
+
+        [Tooltip("Speed for smooth movement (canvas units/sec)")]
         public float smoothMoveSpeed = 1200f;
+
+        [Tooltip("Rover rotation speed (degrees/sec)")]
+        public float roverRotationSpeed = 720f;
+
+        [Tooltip("Distance threshold to consider rover arrived at destination")]
+        public float arrivalThreshold = 8f;
+
+        [Header("Meteor Settings")]
+        [Tooltip("Size of the meteor base Image in canvas units")]
+        public Vector2 meteorSize = new Vector2(120f, 120f);
+
+        [Header("Impact Particle Scale")]
+        [Tooltip("UIParticle scale when zone radius is at minimum")]
+        public float impactScaleMin = 50f;
+
+        [Tooltip("UIParticle scale when zone radius is at maximum")]
+        public float impactScaleMax = 200f;
+
+        // ─── Runtime State ───────────────────────────────────────────────────────
 
         protected KiqqiRoverReflexView view;
         protected KiqqiInputController input;
 
-        protected List<DangerZone> zonePool = new List<DangerZone>();
+        protected List<DangerZone> zonePool   = new List<DangerZone>();
         protected List<DangerZone> activeZones = new List<DangerZone>();
 
         protected Vector2 playerPosition;
         protected Vector2 playerTargetPosition;
+        protected bool isMoving;
         protected float playerRadius = 30f;
 
-        protected float nextSpawnTime;
         protected int currentStreak;
         protected bool inputEnabled;
         protected bool sessionEnding;
@@ -85,35 +167,42 @@ namespace Kiqqi.Framework
 
         protected Coroutine sessionRoutine;
 
+        // Cached player components
+        protected RectTransform playerRect;
+        protected Image playerImage;
+
+        // ─── Framework ───────────────────────────────────────────────────────────
+
         public override System.Type GetAssociatedViewType() => typeof(KiqqiRoverReflexView);
 
         public override void Initialize(KiqqiAppManager context)
         {
             base.Initialize(context);
 
-            view = context.UI.GetView<KiqqiRoverReflexView>();
+            view  = context.UI.GetView<KiqqiRoverReflexView>();
             input = context.Input;
 
             if (!levelMgr)
             {
                 levelMgr = GetComponent<KiqqiRoverReflexLevelManager>();
                 if (!levelMgr)
-                {
-                    Debug.LogError("[KiqqiReflexDodgeManager] KiqqiReflexDodgeLevelManager not assigned and not found on same GameObject!");
-                }
+                    Debug.LogError("[KiqqiRoverReflexManager] KiqqiRoverReflexLevelManager not assigned!");
             }
 
             InitializeZonePool();
+            InitializeImpactPool();
             InitializePlayer();
 
-            Debug.Log("[KiqqiReflexDodgeManager] Initialized.");
+            Debug.Log("[KiqqiRoverReflexManager] Initialized.");
         }
+
+        // ─── Pool Init ───────────────────────────────────────────────────────────
 
         protected virtual void InitializeZonePool()
         {
             if (!zonePoolParent)
             {
-                Debug.LogError("[KiqqiReflexDodgeManager] Zone pool parent missing!");
+                Debug.LogError("[KiqqiRoverReflexManager] Zone pool parent missing!");
                 return;
             }
 
@@ -124,45 +213,87 @@ namespace Kiqqi.Framework
 
                 DangerZone zone = new DangerZone
                 {
-                    gameObject = zoneGO,
-                    rectTransform = zoneGO.GetComponent<RectTransform>(),
-                    image = zoneGO.GetComponent<Image>()
+                    gameObject    = zoneGO,
+                    rectTransform = zoneGO.GetComponent<RectTransform>()
                 };
 
                 if (!zone.rectTransform)
                 {
-                    Debug.LogError($"[KiqqiReflexDodgeManager] Zone '{zoneGO.name}' missing RectTransform! All UI elements must have RectTransform.");
+                    Debug.LogError($"[KiqqiRoverReflexManager] Zone '{zoneGO.name}' missing RectTransform!");
+                    continue;
                 }
 
-                if (!zone.image)
+                // Expect named children: "Shadow" and "Meteor" (Meteor has a "Tail" child)
+                Transform shadowT = zoneGO.transform.Find("Shadow");
+                Transform meteorT = zoneGO.transform.Find("Meteor");
+
+                if (shadowT)
                 {
-                    Debug.LogWarning($"[KiqqiReflexDodgeManager] Zone '{zoneGO.name}' missing Image component! Adding one...");
-                    zone.image = zoneGO.AddComponent<Image>();
+                    zone.shadowRect  = shadowT.GetComponent<RectTransform>();
+                    zone.shadowImage = shadowT.GetComponent<Image>();
+                    if (zone.shadowImage && shadowRingSprite)
+                        zone.shadowImage.sprite = shadowRingSprite;
+                }
+                else
+                {
+                    Debug.LogWarning($"[KiqqiRoverReflexManager] Zone '{zoneGO.name}' has no 'Shadow' child.");
+                }
+
+                if (meteorT)
+                {
+                    zone.meteorRect      = meteorT.GetComponent<RectTransform>();
+                    zone.meteorBaseImage = meteorT.GetComponent<Image>();
+                    if (zone.meteorBaseImage && meteorBaseSprite)
+                    {
+                        zone.meteorBaseImage.sprite         = meteorBaseSprite;
+                        zone.meteorBaseImage.preserveAspect = true;
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"[KiqqiRoverReflexManager] Zone '{zoneGO.name}' has no 'Meteor' child.");
                 }
 
                 zonePool.Add(zone);
             }
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Zone pool initialized with {zonePool.Count} zones from hierarchy.");
+            Debug.Log($"[KiqqiRoverReflexManager] Zone pool: {zonePool.Count} zones.");
+        }
+
+        protected virtual void InitializeImpactPool()
+        {
+            // Template is kept inactive in the scene - nothing to pre-initialize
+            if (!impactParticleTemplate)
+                Debug.LogWarning("[KiqqiRoverReflexManager] Impact particle template not assigned.");
         }
 
         protected virtual void InitializePlayer()
         {
-            if (playerObject)
-            {
-                Image playerImage = playerObject.GetComponent<Image>();
-                if (playerImage)
-                {
-                    playerImage.color = playerColor;
-                }
+            if (!playerObject) return;
 
-                RectTransform playerRect = playerObject.GetComponent<RectTransform>();
-                if (playerRect)
-                {
-                    playerPosition = playerRect.anchoredPosition;
-                }
+            playerRect  = playerObject.GetComponent<RectTransform>();
+            playerImage = playerObject.GetComponent<Image>();
+
+            if (playerImage && roverSprite)
+                playerImage.sprite = roverSprite;
+
+            if (playerRect)
+                playerPosition = playerRect.anchoredPosition;
+
+            playerTargetPosition = playerPosition;
+
+            // Set up destination marker sprite
+            if (destinationMarker)
+            {
+                Image markerImage = destinationMarker.GetComponent<Image>();
+                if (markerImage && destinationMarkerSprite)
+                    markerImage.sprite = destinationMarkerSprite;
+
+                destinationMarker.gameObject.SetActive(false);
             }
         }
+
+        // ─── Game Lifecycle ──────────────────────────────────────────────────────
 
         public override void StartMiniGame()
         {
@@ -174,60 +305,51 @@ namespace Kiqqi.Framework
                 sessionRoutine = null;
             }
 
-            sessionScore = 0;
+            sessionScore  = 0;
             currentStreak = 0;
-            inputEnabled = false;
+            inputEnabled  = false;
             sessionEnding = false;
-            nextSpawnTime = 0f;
+            isMoving      = false;
 
             currentLevel = app.Levels ? app.Levels.currentLevel : 1;
-
             LoadLevelSettings();
 
-            foreach (var zone in activeZones)
-            {
-                zone.Reset();
-            }
+            foreach (var zone in activeZones) zone.Reset();
             activeZones.Clear();
+            foreach (var zone in zonePool) zone.Reset();
 
-            foreach (var zone in zonePool)
+            if (playerRect)
             {
-                zone.Reset();
+                playerRect.anchoredPosition = Vector2.zero;
+                playerRect.localEulerAngles = Vector3.zero;
+                playerPosition              = Vector2.zero;
+                playerTargetPosition        = Vector2.zero;
             }
 
-            if (playerObject)
-            {
-                RectTransform playerRect = playerObject.GetComponent<RectTransform>();
-                if (playerRect)
-                {
-                    playerRect.anchoredPosition = Vector2.zero;
-                    playerPosition = Vector2.zero;
-                    playerTargetPosition = Vector2.zero;
-                }
-                playerObject.SetActive(true);
-            }
+            if (playerObject) playerObject.SetActive(true);
 
-            if (view)
-            {
-                view.UpdateStreakDisplay(0, 1f);
-            }
+            if (destinationMarker) destinationMarker.gameObject.SetActive(false);
+
+            if (view) view.UpdateStreakDisplay(0, 1f);
 
             sessionRoutine = StartCoroutine(RunSession());
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Session started - Level {currentLevel}");
+            Debug.Log($"[KiqqiRoverReflexManager] Session started - Level {currentLevel}");
         }
 
         protected virtual void LoadLevelSettings()
         {
             if (!levelMgr) return;
 
-            spawnInterval = levelMgr.GetSpawnInterval(currentLevel);
-            maxZones = levelMgr.GetMaxZones(currentLevel);
+            spawnInterval   = levelMgr.GetSpawnInterval(currentLevel);
+            maxZones        = levelMgr.GetMaxZones(currentLevel);
             warningDuration = levelMgr.GetWarningDuration(currentLevel);
             zoneRadiusRange = levelMgr.GetZoneRadiusRange(currentLevel);
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Level {currentLevel}: spawnInterval={spawnInterval}s, maxZones={maxZones}, warning={warningDuration}s");
+            Debug.Log($"[KiqqiRoverReflexManager] Level {currentLevel}: interval={spawnInterval}s, maxZones={maxZones}, warning={warningDuration}s");
         }
+
+        // ─── Session Loop ────────────────────────────────────────────────────────
 
         protected virtual IEnumerator RunSession()
         {
@@ -235,14 +357,11 @@ namespace Kiqqi.Framework
 
             inputEnabled = true;
 
-            float sessionTime = levelMgr ? levelMgr.GetLevelTime(currentLevel) : 60f;
-            float elapsed = 0f;
-            float lastSpawnTime = -spawnInterval;
-
-            Debug.Log($"[KiqqiReflexDodgeManager] RunSession started: sessionTime={sessionTime}s, spawnInterval={spawnInterval}s, initial spawn at t=0");
+            float sessionTime   = levelMgr ? levelMgr.GetLevelTime(currentLevel) : 60f;
+            float elapsed       = 0f;
+            float lastSpawnTime = 0f;
 
             SpawnDangerZone();
-            lastSpawnTime = 0f;
 
             while (elapsed < sessionTime && !sessionEnding)
             {
@@ -272,50 +391,75 @@ namespace Kiqqi.Framework
             EndSession();
         }
 
+        // ─── Zone Spawning ───────────────────────────────────────────────────────
+
         protected virtual void SpawnDangerZone()
         {
-            if (!playableArea || !levelMgr)
-            {
-                Debug.LogWarning($"[KiqqiReflexDodgeManager] Cannot spawn: playableArea={playableArea != null}, levelMgr={levelMgr != null}");
-                return;
-            }
+            if (!playableArea || !levelMgr) return;
 
             DangerZone zone = GetAvailableZone();
             if (zone == null)
             {
-                Debug.LogWarning("[KiqqiReflexDodgeManager] No available zone from pool!");
+                Debug.LogWarning("[KiqqiRoverReflexManager] No available zone from pool!");
                 return;
             }
 
             Rect bounds = playableArea.rect;
-            Vector2 randomPos = new Vector2(
-                Random.Range(bounds.xMin + 50f, bounds.xMax - 50f),
-                Random.Range(bounds.yMin + 50f, bounds.yMax - 50f)
+            Vector2 shadowPos = new Vector2(
+                Random.Range(bounds.xMin + 80f, bounds.xMax - 80f),
+                Random.Range(bounds.yMin + 80f, bounds.yMax - 80f)
             );
 
             float radius = Random.Range(zoneRadiusRange.x, zoneRadiusRange.y);
 
-            zone.rectTransform.anchoredPosition = randomPos;
-            zone.rectTransform.sizeDelta = Vector2.one * radius * 2f;
-            zone.radius = radius;
+            // Root positioned at shadow world location; all children use local coords from here
+            zone.rectTransform.anchoredPosition = shadowPos;
+
+            if (zone.shadowRect)
+            {
+                zone.shadowRect.anchoredPosition = Vector2.zero;
+                zone.shadowRect.sizeDelta        = Vector2.one * radius * 2f;
+            }
+
+            // Shadow starts transparent - it will flash during warning phase
+            if (zone.shadowImage)
+            {
+                Color c = zoneWarningColor;
+                c.a = 0f;
+                zone.shadowImage.color = c;
+            }
+
+            // Meteor hidden until flash phase completes
+            if (zone.meteorRect)
+            {
+                zone.meteorRect.anchoredPosition = Vector2.zero;
+                zone.meteorRect.sizeDelta        = meteorSize;
+                zone.meteorRect.localScale       = new Vector3(0.1f, 0.1f, 1f);
+                zone.meteorRect.localEulerAngles = new Vector3(0f, 0f, Random.Range(0f, 360f));
+                zone.meteorRect.gameObject.SetActive(false);
+            }
+
+            // warningDuration from level manager is the meteor fall duration
+            zone.meteorFlyDuration = warningDuration;
+            zone.meteorElapsed     = 0f;
+            zone.meteorArrived     = false;
+            zone.isFlashing        = true;
+            zone.flashElapsed      = 0f;
+            zone.impactElapsed     = 0f;
+
+            zone.radius          = radius;
             zone.warningDuration = warningDuration;
-            zone.elapsedTime = 0f;
-            zone.isActive = true;
-            zone.isDangerous = false;
+            zone.elapsedTime     = 0f;
+            zone.isActive        = true;
+            zone.isDangerous     = false;
 
             DetermineBehavior(zone);
 
-            if (zone.image)
-            {
-                zone.image.color = zoneWarningColor;
-            }
-
             zone.gameObject.SetActive(true);
             zone.rectTransform.SetAsLastSibling();
-            
             activeZones.Add(zone);
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Spawned zone '{zone.gameObject.name}' at {randomPos}, radius={radius}, behavior={zone.behavior}, active={zone.gameObject.activeSelf}, parent={zone.gameObject.transform.parent.name}");
+            Debug.Log($"[KiqqiRoverReflexManager] Spawned '{zone.gameObject.name}' at {shadowPos}, r={radius}, behavior={zone.behavior}");
         }
 
         protected virtual void DetermineBehavior(DangerZone zone)
@@ -323,20 +467,17 @@ namespace Kiqqi.Framework
             if (!levelMgr) return;
 
             float expandChance = levelMgr.GetExpandingChance(currentLevel);
-            float chaseChance = levelMgr.GetChasingChance(currentLevel);
-
-            float roll = Random.value;
+            float chaseChance  = levelMgr.GetChasingChance(currentLevel);
+            float roll         = Random.value;
 
             if (roll < chaseChance)
             {
-                zone.behavior = DangerZoneBehavior.Chasing;
-                zone.chaseSpeed = levelMgr.GetChaseSpeed(currentLevel);
+                zone.behavior    = DangerZoneBehavior.Chasing;
+                zone.chaseSpeed  = levelMgr.GetChaseSpeed(currentLevel);
                 zone.chaseTarget = playerPosition;
 
-                if (zone.image)
-                {
-                    zone.image.color = new Color(0.5f, 0f, 0.5f, 0.3f);
-                }
+                if (zone.shadowImage)
+                    zone.shadowImage.color = new Color(0.6f, 0f, 0.6f, 0.5f);
             }
             else if (roll < chaseChance + expandChance)
             {
@@ -351,16 +492,13 @@ namespace Kiqqi.Framework
         protected virtual DangerZone GetAvailableZone()
         {
             foreach (var zone in zonePool)
-            {
-                if (!zone.isActive)
-                {
-                    return zone;
-                }
-            }
+                if (!zone.isActive) return zone;
 
-            Debug.LogWarning("[KiqqiReflexDodgeManager] No available zones in pool! Add more zone GameObjects to hierarchy.");
+            Debug.LogWarning("[KiqqiRoverReflexManager] Zone pool exhausted!");
             return null;
         }
+
+        // ─── Zone Update ─────────────────────────────────────────────────────────
 
         protected virtual void UpdateActiveZones()
         {
@@ -369,49 +507,106 @@ namespace Kiqqi.Framework
                 DangerZone zone = activeZones[i];
                 zone.elapsedTime += Time.deltaTime;
 
-                if (!zone.isDangerous)
+                // ── Phase 1: Warning flash ────────────────────────────────────────
+                if (zone.isFlashing)
                 {
-                    float pulseSpeed = 3f;
-                    float alpha = Mathf.Lerp(0.2f, 0.5f, (Mathf.Sin(Time.time * pulseSpeed) + 1f) / 2f);
-                    Color pulseColor = zoneWarningColor;
-                    pulseColor.a = alpha;
-                    if (zone.image)
+                    zone.flashElapsed += Time.deltaTime;
+
+                    // Strobe shadow on/off
+                    if (zone.shadowImage)
                     {
-                        zone.image.color = pulseColor;
+                        float cycle   = warningFlashDuration / warningFlashCount;
+                        float inCycle = zone.flashElapsed % cycle;
+                        bool  on      = inCycle < cycle * 0.5f;
+
+                        // Expanding behavior scales the ring during flash phase
+                        if (zone.behavior == DangerZoneBehavior.Expanding && zone.shadowRect)
+                        {
+                            float expandT = zone.flashElapsed / warningFlashDuration;
+                            zone.shadowRect.sizeDelta = Vector2.one * Mathf.Lerp(zone.radius * 0.5f, zone.radius, expandT) * 2f;
+                        }
+
+                        Color c = zoneWarningColor;
+                        c.a = on ? 0.8f : 0f;
+                        zone.shadowImage.color = c;
+                    }
+
+                    // Flash complete → hide shadow, show meteor
+                    if (zone.flashElapsed >= warningFlashDuration)
+                    {
+                        zone.isFlashing = false;
+
+                        if (zone.shadowImage)
+                        {
+                            Color c = zoneWarningColor;
+                            c.a = 0f;
+                            zone.shadowImage.color = c;
+                        }
+
+                        if (zone.meteorRect)
+                            zone.meteorRect.gameObject.SetActive(true);
+                    }
+
+                    continue; // nothing else runs during flash phase
+                }
+
+                // ── Phase 2: Meteor fall ──────────────────────────────────────────
+                if (!zone.meteorArrived && zone.meteorRect)
+                {
+                    zone.meteorElapsed += Time.deltaTime;
+                    float t     = Mathf.Clamp01(zone.meteorElapsed / zone.meteorFlyDuration);
+                    float eased = t * t * t; // cubic ease-in - accelerates into impact
+                    float scale = Mathf.Lerp(0.1f, 1f, eased);
+                    zone.meteorRect.localScale = new Vector3(scale, scale, 1f);
+
+                    if (t >= 1f)
+                    {
+                        zone.meteorArrived = true;
+                        TriggerImpact(zone);
                     }
                 }
 
-                if (!zone.isDangerous && zone.elapsedTime >= zone.warningDuration)
-                {
-                    zone.isDangerous = true;
-
-                    if (zone.image)
-                    {
-                        zone.image.color = zoneDangerousColor;
-                    }
-
-                    CheckPlayerHit(zone);
-                }
-
+                // Chasing behavior: shadow tracks player after impact
                 if (zone.behavior == DangerZoneBehavior.Chasing && zone.isDangerous)
                 {
-                    Vector2 currentPos = zone.rectTransform.anchoredPosition;
-                    Vector2 direction = (playerPosition - currentPos).normalized;
-                    zone.rectTransform.anchoredPosition = Vector2.MoveTowards(currentPos, playerPosition, zone.chaseSpeed * Time.deltaTime);
-                }
-                else if (zone.behavior == DangerZoneBehavior.Expanding && !zone.isDangerous)
-                {
-                    float scale = Mathf.Lerp(zone.radius * 0.5f, zone.radius, zone.elapsedTime / zone.warningDuration);
-                    zone.rectTransform.sizeDelta = Vector2.one * scale * 2f;
+                    zone.rectTransform.anchoredPosition = Vector2.MoveTowards(
+                        zone.rectTransform.anchoredPosition, playerPosition, zone.chaseSpeed * Time.deltaTime);
                 }
 
-                if (zone.isDangerous && zone.elapsedTime >= zone.warningDuration + 0.5f)
+                // ── Phase 3: Cleanup 0.5s after impact ───────────────────────────
+                if (zone.isDangerous)
                 {
-                    OnZoneExplode(zone);
-                    zone.Reset();
-                    activeZones.RemoveAt(i);
+                    zone.impactElapsed += Time.deltaTime;
+                    if (zone.impactElapsed >= 0.5f)
+                    {
+                        OnZoneExplode(zone);
+                        zone.Reset();
+                        activeZones.RemoveAt(i);
+                    }
                 }
             }
+        }
+
+        // ─── Hit Detection ───────────────────────────────────────────────────────
+
+        /// <summary>Called the frame the meteor arrives at its target. Fires particle, hides meteor, checks hit.</summary>
+        protected virtual void TriggerImpact(DangerZone zone)
+        {
+            if (zone.isDangerous) return; // already triggered (safety guard)
+            zone.isDangerous = true;
+
+            if (zone.meteorRect)
+            {
+                zone.meteorRect.localScale = Vector3.one;
+                zone.meteorRect.gameObject.SetActive(false);
+            }
+
+            PlayImpactParticle(zone.rectTransform.anchoredPosition, zone.radius);
+
+            if (zone.shadowImage)
+                zone.shadowImage.color = zoneDangerousColor;
+
+            CheckPlayerHit(zone);
         }
 
         protected virtual void CheckPlayerHit(DangerZone zone)
@@ -419,88 +614,96 @@ namespace Kiqqi.Framework
             float distance = Vector2.Distance(playerPosition, zone.rectTransform.anchoredPosition);
 
             if (distance <= zone.radius + playerRadius)
-            {
                 OnPlayerHit(zone);
-            }
             else
-            {
                 OnSuccessfulDodge(zone);
-            }
         }
+
+        // ─── Game Events ─────────────────────────────────────────────────────────
 
         protected virtual void OnZoneExplode(DangerZone zone)
         {
+            // Particle was already fired at impact moment - nothing more needed here
         }
 
         protected virtual void OnPlayerHit(DangerZone zone)
         {
             if (!levelMgr) return;
 
-            int penalty = levelMgr.GetHitPenalty(currentLevel);
-            sessionScore = Mathf.Max(0, sessionScore - penalty);
-
+            int penalty   = levelMgr.GetHitPenalty(currentLevel);
+            sessionScore  = Mathf.Max(0, sessionScore - penalty);
             currentStreak = 0;
 
-            if (view)
-            {
-                view.UpdateStreakDisplay(currentStreak, 1f);
-            }
+            if (view) view.UpdateStreakDisplay(currentStreak, 1f);
 
             KiqqiAppManager.Instance.Audio.PlaySfx("answerwrong");
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Player HIT! Penalty: -{penalty}, sessionScore={sessionScore}");
+            Debug.Log($"[KiqqiRoverReflexManager] HIT! Penalty -{penalty}, score={sessionScore}");
         }
 
         protected virtual void OnSuccessfulDodge(DangerZone zone)
         {
             if (!levelMgr) return;
 
-            int baseScore = levelMgr.GetDodgeScore(currentLevel);
+            int baseScore    = levelMgr.GetDodgeScore(currentLevel);
             currentStreak++;
 
-            int threshold = levelMgr.GetStreakThreshold(currentLevel);
+            int   threshold  = levelMgr.GetStreakThreshold(currentLevel);
             float multiplier = currentStreak >= threshold ? levelMgr.GetStreakMultiplier(currentLevel) : 1f;
+            int   earned     = Mathf.RoundToInt(baseScore * multiplier);
+            sessionScore    += earned;
 
-            int earnedScore = Mathf.RoundToInt(baseScore * multiplier);
-            sessionScore += earnedScore;
-
-            if (view)
-            {
-                view.UpdateStreakDisplay(currentStreak, multiplier);
-            }
+            if (view) view.UpdateStreakDisplay(currentStreak, multiplier);
 
             KiqqiAppManager.Instance.Audio.PlaySfx("answercorrect");
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Dodge SUCCESS! +{earnedScore} (streak: {currentStreak}, mult: {multiplier}x), sessionScore={sessionScore}");
+            Debug.Log($"[KiqqiRoverReflexManager] Dodge +{earned} (streak:{currentStreak} x{multiplier}), score={sessionScore}");
         }
 
+        // ─── Impact Particles ────────────────────────────────────────────────────
+
+        protected virtual void PlayImpactParticle(Vector2 anchoredPos, float radius)
+        {
+            if (!impactParticleTemplate) return;
+
+            Transform parent = impactPoolParent ? impactPoolParent : impactParticleTemplate.transform.parent;
+            GameObject instance = Instantiate(impactParticleTemplate, parent);
+
+            RectTransform rt = instance.GetComponent<RectTransform>();
+            if (rt) rt.anchoredPosition = anchoredPos;
+
+            // Scale UIParticle proportionally to the zone radius
+            UIParticle uiParticle = instance.GetComponent<UIParticle>();
+            if (uiParticle)
+            {
+                float t = Mathf.InverseLerp(zoneRadiusRange.x, zoneRadiusRange.y, radius);
+                uiParticle.scale = Mathf.Lerp(impactScaleMin, impactScaleMax, t);
+            }
+
+            instance.SetActive(true);
+
+            ParticleSystem ps = instance.GetComponent<ParticleSystem>();
+            if (ps) ps.Play();
+
+            float destroyDelay = ps ? ps.main.duration + ps.main.startLifetime.constantMax + 0.1f : 2f;
+            Destroy(instance, destroyDelay);
+        }
+
+        // ─── Player Input & Movement ─────────────────────────────────────────────
+
+        /// <summary>Called by the view on tap/click.</summary>
         public virtual void HandlePlayerTap(Vector2 screenPosition)
         {
             if (!isActive || !inputEnabled || sessionEnding) return;
+            if (!playableArea) return;
 
-            if (playerObject && playableArea)
+            Vector2 localPoint;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    playableArea, screenPosition, null, out localPoint))
             {
-                RectTransform playerRect = playerObject.GetComponent<RectTransform>();
-                if (playerRect)
-                {
-                    Vector2 localPoint;
-                    RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                        playableArea,
-                        screenPosition,
-                        null,
-                        out localPoint
-                    );
-
-                    if (useSmoothMovement)
-                    {
-                        playerTargetPosition = localPoint;
-                    }
-                    else
-                    {
-                        playerRect.anchoredPosition = localPoint;
-                        playerPosition = localPoint;
-                    }
-                }
+                playerTargetPosition = localPoint;
+                isMoving = true;
+                ShowDestinationMarker(localPoint);
             }
 
             KiqqiAppManager.Instance.Audio.PlaySfx("buttonclick");
@@ -508,30 +711,69 @@ namespace Kiqqi.Framework
 
         protected virtual void UpdatePlayerMovement()
         {
-            if (!playerObject || !useSmoothMovement) return;
-
-            RectTransform playerRect = playerObject.GetComponent<RectTransform>();
+            if (!playerObject) return;
+            if (!playerRect) playerRect = playerObject.GetComponent<RectTransform>();
             if (!playerRect) return;
 
-            if (Vector2.Distance(playerPosition, playerTargetPosition) > 1f)
+            float dist = Vector2.Distance(playerPosition, playerTargetPosition);
+
+            if (dist > arrivalThreshold)
             {
-                playerPosition = Vector2.MoveTowards(
-                    playerPosition,
-                    playerTargetPosition,
-                    smoothMoveSpeed * Time.deltaTime
-                );
+                isMoving = true;
+
+                Vector2 prevPos = playerPosition;
+
+                playerPosition = useSmoothMovement
+                    ? Vector2.MoveTowards(playerPosition, playerTargetPosition, smoothMoveSpeed * Time.deltaTime)
+                    : playerTargetPosition;
+
                 playerRect.anchoredPosition = playerPosition;
+
+                // Rotate rover to face travel direction
+                Vector2 moveDir = playerPosition - prevPos;
+                if (moveDir.sqrMagnitude > 0.0001f)
+                {
+                    float targetAngle  = Mathf.Atan2(moveDir.x, moveDir.y) * Mathf.Rad2Deg;
+                    float currentAngle = playerRect.localEulerAngles.z;
+                    float delta        = Mathf.DeltaAngle(currentAngle, -targetAngle);
+                    float step         = roverRotationSpeed * Time.deltaTime;
+                    float newAngle     = currentAngle + Mathf.Clamp(delta, -step, step);
+                    playerRect.localEulerAngles = new Vector3(0f, 0f, newAngle);
+                }
+            }
+            else if (isMoving)
+            {
+                isMoving = false;
+                HideDestinationMarker();
             }
         }
+
+        // ─── Destination Marker ───────────────────────────────────────────────────
+
+        private void ShowDestinationMarker(Vector2 localPosInPlayableArea)
+        {
+            if (!destinationMarker) return;
+            destinationMarker.anchoredPosition = localPosInPlayableArea;
+            destinationMarker.gameObject.SetActive(true);
+        }
+
+        private void HideDestinationMarker()
+        {
+            if (destinationMarker)
+                destinationMarker.gameObject.SetActive(false);
+        }
+
+        // ─── Session End ─────────────────────────────────────────────────────────
 
         protected virtual void EndSession()
         {
             if (sessionEnding) return;
 
             sessionEnding = true;
-            inputEnabled = false;
+            inputEnabled  = false;
+            HideDestinationMarker();
 
-            Debug.Log($"[KiqqiReflexDodgeManager] Session ended. Final Score: {sessionScore}");
+            Debug.Log($"[KiqqiRoverReflexManager] Session ended. Score: {sessionScore}");
 
             CompleteMiniGame(sessionScore, sessionScore > 0);
         }
@@ -544,17 +786,18 @@ namespace Kiqqi.Framework
 
         public void ResumeFromPause(KiqqiRoverReflexView v)
         {
-            view = v ?? view;
-            isActive = true;
+            view       = v ?? view;
+            isActive   = true;
             isComplete = false;
 
             if (view && levelMgr)
             {
-                float multiplier = currentStreak >= levelMgr.GetStreakThreshold(currentLevel) ? levelMgr.GetStreakMultiplier(currentLevel) : 1f;
-                view.UpdateStreakDisplay(currentStreak, multiplier);
+                float mult = currentStreak >= levelMgr.GetStreakThreshold(currentLevel)
+                    ? levelMgr.GetStreakMultiplier(currentLevel) : 1f;
+                view.UpdateStreakDisplay(currentStreak, mult);
             }
 
-            Debug.Log("[KiqqiReflexDodgeManager] Resumed from pause.");
+            Debug.Log("[KiqqiRoverReflexManager] Resumed from pause.");
         }
 
         public override void ResetMiniGame()
@@ -569,31 +812,23 @@ namespace Kiqqi.Framework
 
             currentStreak = 0;
             sessionEnding = false;
-            inputEnabled = false;
+            inputEnabled  = false;
+            isMoving      = false;
 
-            foreach (var zone in activeZones)
-            {
-                zone.Reset();
-            }
+            foreach (var zone in activeZones) zone.Reset();
             activeZones.Clear();
+            foreach (var zone in zonePool) zone.Reset();
 
-            foreach (var zone in zonePool)
+            if (playerRect)
             {
-                zone.Reset();
+                playerRect.anchoredPosition = Vector2.zero;
+                playerRect.localEulerAngles = Vector3.zero;
+                playerPosition              = Vector2.zero;
+                playerTargetPosition        = Vector2.zero;
             }
 
-            if (playerObject)
-            {
-                RectTransform playerRect = playerObject.GetComponent<RectTransform>();
-                if (playerRect)
-                {
-                    playerRect.anchoredPosition = Vector2.zero;
-                    playerPosition = Vector2.zero;
-                    playerTargetPosition = Vector2.zero;
-                }
-            }
-
-            Debug.Log("[KiqqiReflexDodgeManager] ResetMiniGame - state cleared.");
+            HideDestinationMarker();
+            Debug.Log("[KiqqiRoverReflexManager] Reset complete.");
         }
 
         public override void OnMiniGameExit()
@@ -606,23 +841,18 @@ namespace Kiqqi.Framework
                 sessionRoutine = null;
             }
 
-            inputEnabled = false;
+            inputEnabled  = false;
             sessionEnding = false;
-            isActive = false;
-            isComplete = true;
+            isActive      = false;
+            isComplete    = true;
 
-            foreach (var zone in activeZones)
-            {
-                zone.Reset();
-            }
+            foreach (var zone in activeZones) zone.Reset();
             activeZones.Clear();
 
-            if (playerObject)
-            {
-                playerObject.SetActive(false);
-            }
+            if (playerObject) playerObject.SetActive(false);
+            HideDestinationMarker();
 
-            Debug.Log("[KiqqiReflexDodgeManager] OnMiniGameExit - cleaned up.");
+            Debug.Log("[KiqqiRoverReflexManager] OnMiniGameExit - cleaned up.");
         }
     }
 }

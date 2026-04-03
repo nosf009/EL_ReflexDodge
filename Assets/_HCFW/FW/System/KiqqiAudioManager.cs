@@ -31,6 +31,9 @@ namespace Kiqqi.Framework
         private AudioSource sfxSource;
         private bool muted;
 
+        /// <summary>Returns true when audio is currently muted.</summary>
+        public bool IsMuted => muted;
+
         // --------------------------------------------------------------
         public void Initialize(KiqqiDataManager data)
         {

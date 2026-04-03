@@ -186,18 +186,9 @@ namespace Kiqqi.Framework
             if (!muteIconImage)
                 return;
 
-            bool isMuted = PlayerPrefs.GetInt("audio_muted", 0) == 1;
+            bool isMuted = KiqqiAppManager.Instance.Audio.IsMuted;
 
-            if (isMuted)
-            {
-                if (soundOffSprite)
-                    muteIconImage.sprite = soundOffSprite;
-            }
-            else
-            {
-                if (soundOnSprite)
-                    muteIconImage.sprite = soundOnSprite;
-            }
+            muteIconImage.sprite = isMuted ? soundOffSprite : soundOnSprite;
         }
 
         private void ResumeTime()

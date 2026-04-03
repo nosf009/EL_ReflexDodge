@@ -14,6 +14,7 @@ namespace Kiqqi.Framework
         public DifficultyRange hard = new() { minLevel = 49, maxLevel = 60 };
 
         [Header("═══ BEGINNER (Levels 1-12) ═══")]
+        [Tooltip("Session time (sec)")] public float beginnerSessionTime = 60f;
         [Tooltip("Max simultaneous zones")] public int beginnerMaxZones = 2;
         [Tooltip("Spawn interval (sec)")] public float beginnerSpawnInterval = 2.0f;
         [Tooltip("Warning duration (sec)")] public float beginnerWarningDuration = 1.8f;
@@ -28,6 +29,7 @@ namespace Kiqqi.Framework
         public float beginnerStreakMultiplier = 1.5f;
 
         [Header("═══ EASY (Levels 13-24) ═══")]
+        public float easySessionTime = 60f;
         public int easyMaxZones = 3;
         public float easySpawnInterval = 1.5f;
         public float easyWarningDuration = 1.5f;
@@ -42,6 +44,7 @@ namespace Kiqqi.Framework
         public float easyStreakMultiplier = 2.0f;
 
         [Header("═══ MEDIUM (Levels 25-36) ═══")]
+        public float mediumSessionTime = 60f;
         public int mediumMaxZones = 4;
         public float mediumSpawnInterval = 1.2f;
         public float mediumWarningDuration = 1.2f;
@@ -56,6 +59,7 @@ namespace Kiqqi.Framework
         public float mediumStreakMultiplier = 2.5f;
 
         [Header("═══ ADVANCED (Levels 37-48) ═══")]
+        public float advancedSessionTime = 60f;
         public int advancedMaxZones = 5;
         public float advancedSpawnInterval = 1.0f;
         public float advancedWarningDuration = 1.0f;
@@ -70,6 +74,7 @@ namespace Kiqqi.Framework
         public float advancedStreakMultiplier = 3.0f;
 
         [Header("═══ HARD (Levels 49-60) ═══")]
+        public float hardSessionTime = 60f;
         public int hardMaxZones = 6;
         public float hardSpawnInterval = 0.8f;
         public float hardWarningDuration = 0.8f;
@@ -113,11 +118,11 @@ namespace Kiqqi.Framework
         {
             return GetCurrentDifficulty(level) switch
             {
-                KiqqiLevelManager.KiqqiDifficulty.Beginner => 60f,
-                KiqqiLevelManager.KiqqiDifficulty.Easy => 60f,
-                KiqqiLevelManager.KiqqiDifficulty.Medium => 60f,
-                KiqqiLevelManager.KiqqiDifficulty.Advanced => 60f,
-                KiqqiLevelManager.KiqqiDifficulty.Hard => 60f,
+                KiqqiLevelManager.KiqqiDifficulty.Beginner => beginnerSessionTime,
+                KiqqiLevelManager.KiqqiDifficulty.Easy     => easySessionTime,
+                KiqqiLevelManager.KiqqiDifficulty.Medium   => mediumSessionTime,
+                KiqqiLevelManager.KiqqiDifficulty.Advanced => advancedSessionTime,
+                KiqqiLevelManager.KiqqiDifficulty.Hard     => hardSessionTime,
                 _ => 60f
             };
         }
