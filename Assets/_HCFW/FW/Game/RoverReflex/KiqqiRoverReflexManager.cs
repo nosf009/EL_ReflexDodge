@@ -179,6 +179,9 @@ namespace Kiqqi.Framework
         [Tooltip("Pickup detection radius in world-space screen pixels")]
         public float mineralPickupRadius = 60f;
 
+        [Tooltip("Randomise mineral Z rotation on spawn")]
+        public bool randomizeMineralRotation = false;
+
         [Header("Screen Shake")]
         [Tooltip("Enable/disable screen shake on every meteor impact")]
         public bool enableScreenShake = true;
@@ -486,13 +489,9 @@ namespace Kiqqi.Framework
 
             yield return new WaitForSeconds(0.3f);
 
-            while (activeZones.Count > 0)
-            {
-                UpdatePlayerMovement();
-                UpdateActiveZones();
-                UpdateMineralPickups();
-                yield return null;
-            }
+            // Time is up — force-clear all remaining zones immediately so we don't stall
+            foreach (var zone in activeZones) zone.Reset();
+            activeZones.Clear();
 
             EndSession();
         }
@@ -875,7 +874,9 @@ namespace Kiqqi.Framework
                         parentRt, zone.rectTransform.position, null, out Vector2 localPos);
                     rt.anchoredPosition = localPos;
                 }
-                rt.localEulerAngles = new Vector3(0f, 0f, Random.Range(0f, 360f));
+                rt.localEulerAngles = randomizeMineralRotation
+                    ? new Vector3(0f, 0f, Random.Range(0f, 360f))
+                    : Vector3.zero;
             }
 
             Image img = mineral.GetComponent<Image>();
@@ -1159,11 +1160,20 @@ namespace Kiqqi.Framework
 
         protected virtual void EndSession()
         {
-            if (sessionEnding) return;
+            if (isComplete) return;
 
             sessionEnding = true;
             inputEnabled  = false;
             HideDestinationMarker();
+            ClearAllMinerals();
+
+            // Snap rover color back in case a pulse was mid-flight
+            if (_roverPulseRoutine != null) { StopCoroutine(_roverPulseRoutine); _roverPulseRoutine = null; }
+            if (playerImage) playerImage.color = Color.white;
+
+            // Stop any in-progress shake and restore view position
+            if (_shakeRoutine != null) { StopCoroutine(_shakeRoutine); _shakeRoutine = null; }
+            if (gameViewRect) gameViewRect.anchoredPosition = Vector2.zero;
 
             Debug.Log($"[KiqqiRoverReflexManager] Session ended. Score: {sessionScore}");
 
