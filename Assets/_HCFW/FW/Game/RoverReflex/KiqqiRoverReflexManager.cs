@@ -50,9 +50,14 @@ namespace Kiqqi.Framework
         public float flashElapsed;  // elapsed within flash phase
         public float impactElapsed; // elapsed after impact (for cleanup)
 
+        // Drop shadow (spawned at impact position during meteor fall)
+        public GameObject meteorDropShadow;
+        public Image      meteorDropShadowImage;
+
         public void Reset()
         {
             if (gameObject) gameObject.SetActive(false);
+            if (meteorDropShadow) { UnityEngine.Object.Destroy(meteorDropShadow); meteorDropShadow = null; meteorDropShadowImage = null; }
             elapsedTime   = 0f;
             meteorElapsed = 0f;
             flashElapsed  = 0f;
@@ -142,6 +147,73 @@ namespace Kiqqi.Framework
         [Tooltip("UIParticle scale when zone radius is at maximum")]
         public float impactScaleMax = 200f;
 
+        [Header("Meteor Drop Shadow")]
+        [Tooltip("Circular shadow Image GO - keep inactive in scene as template")]
+        public GameObject meteorDropShadowTemplate;
+
+        [Tooltip("Parent for spawned drop shadows (defaults to zonePoolParent's parent if not set)")]
+        public Transform meteorDropShadowParent;
+
+        [Tooltip("Shadow size (canvas units diameter) when meteor is at maximum height (t=0)")]
+        public float meteorDropShadowSizeMax = 180f;
+
+        [Tooltip("Shadow size (canvas units diameter) when meteor is about to impact (t=1)")]
+        public float meteorDropShadowSizeMin = 60f;
+
+        [Tooltip("Shadow alpha when meteor is at maximum height (t=0) - dim and wide")]
+        public float meteorDropShadowAlphaStart = 0.15f;
+
+        [Tooltip("Shadow alpha just before impact (t=1) - tight and dark")]
+        public float meteorDropShadowAlphaEnd = 0.65f;
+
+        [Header("Mineral Pickups")]
+        [Tooltip("MineralPickup GO kept inactive in scene as template")]
+        public GameObject mineralPickupTemplate;
+
+        [Tooltip("Parent for spawned minerals — leave empty to use template's own parent")]
+        public Transform mineralPickupParent;
+
+        [Tooltip("Sprite variants for minerals — one will be chosen at random per drop")]
+        public Sprite[] mineralSprites;
+
+        [Tooltip("Pickup detection radius in world-space screen pixels")]
+        public float mineralPickupRadius = 60f;
+
+        [Header("Screen Shake")]
+        [Tooltip("Enable/disable screen shake on every meteor impact")]
+        public bool enableScreenShake = true;
+
+        [Tooltip("RectTransform to shake — assign rrRoverReflexGameView")]
+        public RectTransform gameViewRect;
+
+        [Tooltip("Total shake duration (seconds)")]
+        public float shakeDuration = 0.22f;
+
+        [Tooltip("Peak shake magnitude in canvas units")]
+        public float shakeMagnitude = 11f;
+
+        [Tooltip("How fast the shake decays — higher = snappier falloff")]
+        public float shakeDamping = 9f;
+
+        [Header("Skidmarks")]
+        [Tooltip("UI Image prefab for a single skidmark segment - keep inactive in scene")]
+        public GameObject skidmarkPrefab;
+
+        [Tooltip("Parent transform for spawned skidmark GOs (defaults to playableArea if not set)")]
+        public Transform skidmarkParent;
+
+        [Tooltip("Names of wheel child transforms on the Player GO (emission points)")]
+        public string[] wheelTransformNames = new string[] { "WheelLeft", "WheelRight" };
+
+        [Tooltip("Minimum distance the rover must travel between skidmark spawns")]
+        public float skidmarkSpawnDistance = 20f;
+
+        [Tooltip("Seconds the mark stays fully visible before fading")]
+        public float skidmarkFadeDelay = 0.4f;
+
+        [Tooltip("Seconds the fade-out takes")]
+        public float skidmarkFadeDuration = 0.6f;
+
         // ─── Runtime State ───────────────────────────────────────────────────────
 
         protected KiqqiRoverReflexView view;
@@ -170,6 +242,15 @@ namespace Kiqqi.Framework
         // Cached player components
         protected RectTransform playerRect;
         protected Image playerImage;
+
+        // Skidmark state
+        private Vector2 _lastSkidmarkPosition;
+        private RectTransform[] _wheelRects;
+
+        // Mineral pickup state
+        private readonly List<GameObject> _activeMinerals = new List<GameObject>();
+        private Coroutine _roverPulseRoutine;
+        private Coroutine _shakeRoutine;
 
         // ─── Framework ───────────────────────────────────────────────────────────
 
@@ -282,6 +363,26 @@ namespace Kiqqi.Framework
 
             playerTargetPosition = playerPosition;
 
+            // Cache wheel emission point RectTransforms
+            if (wheelTransformNames != null && wheelTransformNames.Length > 0)
+            {
+                var found = new List<RectTransform>();
+                foreach (string wName in wheelTransformNames)
+                {
+                    Transform t = playerObject.transform.Find(wName);
+                    if (t)
+                    {
+                        RectTransform rt = t.GetComponent<RectTransform>();
+                        if (rt) found.Add(rt);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[KiqqiRoverReflexManager] Wheel transform '{wName}' not found on Player.");
+                    }
+                }
+                _wheelRects = found.ToArray();
+            }
+
             // Set up destination marker sprite
             if (destinationMarker)
             {
@@ -325,6 +426,9 @@ namespace Kiqqi.Framework
                 playerPosition              = Vector2.zero;
                 playerTargetPosition        = Vector2.zero;
             }
+
+            _lastSkidmarkPosition = Vector2.zero;
+            ClearAllMinerals();
 
             if (playerObject) playerObject.SetActive(true);
 
@@ -375,6 +479,7 @@ namespace Kiqqi.Framework
 
                 UpdatePlayerMovement();
                 UpdateActiveZones();
+                UpdateMineralPickups();
 
                 yield return null;
             }
@@ -385,6 +490,7 @@ namespace Kiqqi.Framework
             {
                 UpdatePlayerMovement();
                 UpdateActiveZones();
+                UpdateMineralPickups();
                 yield return null;
             }
 
@@ -531,7 +637,7 @@ namespace Kiqqi.Framework
                         zone.shadowImage.color = c;
                     }
 
-                    // Flash complete → hide shadow, show meteor
+                    // Flash complete → hide shadow, show meteor, spawn drop shadow
                     if (zone.flashElapsed >= warningFlashDuration)
                     {
                         zone.isFlashing = false;
@@ -545,6 +651,8 @@ namespace Kiqqi.Framework
 
                         if (zone.meteorRect)
                             zone.meteorRect.gameObject.SetActive(true);
+
+                        SpawnMeteorDropShadow(zone);
                     }
 
                     continue; // nothing else runs during flash phase
@@ -558,6 +666,8 @@ namespace Kiqqi.Framework
                     float eased = t * t * t; // cubic ease-in - accelerates into impact
                     float scale = Mathf.Lerp(0.1f, 1f, eased);
                     zone.meteorRect.localScale = new Vector3(scale, scale, 1f);
+
+                    UpdateMeteorDropShadow(zone, t);
 
                     if (t >= 1f)
                     {
@@ -601,11 +711,18 @@ namespace Kiqqi.Framework
                 zone.meteorRect.gameObject.SetActive(false);
             }
 
+            if (zone.meteorDropShadow) { Destroy(zone.meteorDropShadow); zone.meteorDropShadow = null; zone.meteorDropShadowImage = null; }
+
             PlayImpactParticle(zone.rectTransform.anchoredPosition, zone.radius);
 
             if (zone.shadowImage)
                 zone.shadowImage.color = zoneDangerousColor;
 
+            bool roverWasHit = Vector2.Distance(playerPosition, zone.rectTransform.anchoredPosition)
+                               <= zone.radius + playerRadius;
+
+            if (!roverWasHit) TrySpawnMineral(zone);
+            TriggerScreenShake(zone.radius);
             CheckPlayerHit(zone);
         }
 
@@ -634,30 +751,72 @@ namespace Kiqqi.Framework
             sessionScore  = Mathf.Max(0, sessionScore - penalty);
             currentStreak = 0;
 
-            if (view) view.UpdateStreakDisplay(currentStreak, 1f);
+            if (view)
+            {
+                view.UpdateStreakDisplay(currentStreak, 1f);
+                RefreshScore();
+            }
 
             KiqqiAppManager.Instance.Audio.PlaySfx("answerwrong");
+            PulseRoverColor(Color.red);
 
             Debug.Log($"[KiqqiRoverReflexManager] HIT! Penalty -{penalty}, score={sessionScore}");
         }
 
         protected virtual void OnSuccessfulDodge(DangerZone zone)
         {
-            if (!levelMgr) return;
-
-            int baseScore    = levelMgr.GetDodgeScore(currentLevel);
             currentStreak++;
+            if (view) view.UpdateStreakDisplay(currentStreak, 1f);
+            Debug.Log($"[KiqqiRoverReflexManager] Dodge (streak:{currentStreak})");
+        }
 
-            int   threshold  = levelMgr.GetStreakThreshold(currentLevel);
-            float multiplier = currentStreak >= threshold ? levelMgr.GetStreakMultiplier(currentLevel) : 1f;
-            int   earned     = Mathf.RoundToInt(baseScore * multiplier);
-            sessionScore    += earned;
+        // ─── Meteor Drop Shadow ──────────────────────────────────────────────────
 
-            if (view) view.UpdateStreakDisplay(currentStreak, multiplier);
+        private void SpawnMeteorDropShadow(DangerZone zone)
+        {
+            if (!meteorDropShadowTemplate) return;
 
-            KiqqiAppManager.Instance.Audio.PlaySfx("answercorrect");
+            Transform parent = meteorDropShadowParent
+                ? meteorDropShadowParent
+                : meteorDropShadowTemplate.transform.parent;
 
-            Debug.Log($"[KiqqiRoverReflexManager] Dodge +{earned} (streak:{currentStreak} x{multiplier}), score={sessionScore}");
+            GameObject shadow = Instantiate(meteorDropShadowTemplate, parent);
+            RectTransform rt  = shadow.GetComponent<RectTransform>();
+            if (rt)
+            {
+                rt.anchoredPosition = zone.rectTransform.anchoredPosition;
+                float size = meteorDropShadowSizeMax;
+                rt.sizeDelta = new Vector2(size, size);
+            }
+
+            Image img = shadow.GetComponent<Image>();
+            if (img)
+            {
+                Color c = img.color;
+                c.a     = meteorDropShadowAlphaStart;
+                img.color = c;
+            }
+
+            shadow.SetActive(true);
+
+            zone.meteorDropShadow      = shadow;
+            zone.meteorDropShadowImage = img;
+        }
+
+        /// <summary>Called every frame during meteor fall. t is 0 (just spawned) → 1 (impact).</summary>
+        private void UpdateMeteorDropShadow(DangerZone zone, float t)
+        {
+            if (!zone.meteorDropShadow || !zone.meteorDropShadowImage) return;
+
+            float size  = Mathf.Lerp(meteorDropShadowSizeMax, meteorDropShadowSizeMin, t);
+            float alpha = Mathf.Lerp(meteorDropShadowAlphaStart, meteorDropShadowAlphaEnd, t);
+
+            RectTransform rt = zone.meteorDropShadow.GetComponent<RectTransform>();
+            if (rt) rt.sizeDelta = new Vector2(size, size);
+
+            Color c = zone.meteorDropShadowImage.color;
+            c.a = alpha;
+            zone.meteorDropShadowImage.color = c;
         }
 
         // ─── Impact Particles ────────────────────────────────────────────────────
@@ -687,6 +846,174 @@ namespace Kiqqi.Framework
 
             float destroyDelay = ps ? ps.main.duration + ps.main.startLifetime.constantMax + 0.1f : 2f;
             Destroy(instance, destroyDelay);
+        }
+
+        // ─── Mineral Pickups ─────────────────────────────────────────────────────
+
+        /// <summary>Chance-based mineral drop at the meteor impact position.</summary>
+        private void TrySpawnMineral(DangerZone zone)
+        {
+            if (!mineralPickupTemplate || mineralSprites == null || mineralSprites.Length == 0) return;
+            if (!levelMgr) return;
+
+            if (Random.value > levelMgr.GetMineralDropChance(currentLevel)) return;
+
+            Transform parent = mineralPickupParent
+                ? mineralPickupParent
+                : mineralPickupTemplate.transform.parent;
+
+            GameObject mineral = Instantiate(mineralPickupTemplate, parent);
+
+            RectTransform rt = mineral.GetComponent<RectTransform>();
+            if (rt)
+            {
+                // Convert zone world position to parent-local anchored space
+                RectTransform parentRt = parent.GetComponent<RectTransform>();
+                if (parentRt != null)
+                {
+                    RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                        parentRt, zone.rectTransform.position, null, out Vector2 localPos);
+                    rt.anchoredPosition = localPos;
+                }
+                rt.localEulerAngles = new Vector3(0f, 0f, Random.Range(0f, 360f));
+            }
+
+            Image img = mineral.GetComponent<Image>();
+            if (img) img.sprite = mineralSprites[Random.Range(0, mineralSprites.Length)];
+
+            mineral.SetActive(true);
+            _activeMinerals.Add(mineral);
+        }
+
+        /// <summary>Checks rover proximity to each active mineral every frame.</summary>
+        private void UpdateMineralPickups()
+        {
+            if (_activeMinerals.Count == 0 || !playerRect) return;
+
+            Vector2 roverWorldPos = playerRect.position;
+
+            for (int i = _activeMinerals.Count - 1; i >= 0; i--)
+            {
+                GameObject mineral = _activeMinerals[i];
+                if (!mineral) { _activeMinerals.RemoveAt(i); continue; }
+
+                RectTransform mineralRt = mineral.GetComponent<RectTransform>();
+                if (!mineralRt) continue;
+
+                float dist = Vector2.Distance(roverWorldPos, (Vector2)mineralRt.position);
+                if (dist <= mineralPickupRadius)
+                {
+                    _activeMinerals.RemoveAt(i);
+                    OnMineralPickup(mineral);
+                }
+            }
+        }
+
+        protected virtual void OnMineralPickup(GameObject mineral)
+        {
+            Destroy(mineral);
+
+            if (!levelMgr) return;
+
+            int earned    = levelMgr.GetPickupScore(currentLevel);
+            sessionScore += earned;
+            currentStreak++;
+
+            if (view)
+            {
+                view.UpdateStreakDisplay(currentStreak,
+                    currentStreak >= levelMgr.GetStreakThreshold(currentLevel)
+                        ? levelMgr.GetStreakMultiplier(currentLevel) : 1f);
+                RefreshScore();
+            }
+
+            KiqqiAppManager.Instance.Audio.PlaySfx("answercorrect");
+            PulseRoverColor(Color.green);
+
+            Debug.Log($"[KiqqiRoverReflexManager] Mineral pickup +{earned}, score={sessionScore}");
+        }
+
+        private void ClearAllMinerals()
+        {
+            foreach (GameObject m in _activeMinerals)
+                if (m) Destroy(m);
+            _activeMinerals.Clear();
+        }
+
+        /// <summary>Pushes sessionScore into the shared GameManager slot then refreshes the HUD label.</summary>
+        private void RefreshScore()
+        {
+            KiqqiAppManager.Instance.Game.CurrentScore = sessionScore;
+            if (view) view.RefreshScoreUI();
+        }
+
+        // ─── Screen Shake ────────────────────────────────────────────────────────
+
+        private void TriggerScreenShake(float zoneRadius)
+        {
+            if (!enableScreenShake || !gameViewRect) return;
+
+            Vector2 radiusRange = levelMgr
+                ? levelMgr.GetZoneRadiusRange(currentLevel)
+                : new Vector2(zoneRadius, zoneRadius);
+
+            float t              = Mathf.InverseLerp(radiusRange.x, radiusRange.y, zoneRadius);
+            float scaledMagnitude = Mathf.Lerp(shakeMagnitude, shakeMagnitude * 2f, t);
+
+            if (_shakeRoutine != null) StopCoroutine(_shakeRoutine);
+            _shakeRoutine = StartCoroutine(ScreenShakeRoutine(scaledMagnitude));
+        }
+
+        private IEnumerator ScreenShakeRoutine(float magnitude)
+        {
+            Vector2 origin = gameViewRect.anchoredPosition;
+            float elapsed  = 0f;
+
+            while (elapsed < shakeDuration)
+            {
+                elapsed += Time.deltaTime;
+                float progress     = elapsed / shakeDuration;
+                float currentMag   = magnitude * (1f - Mathf.Pow(progress, 1f / shakeDamping));
+                gameViewRect.anchoredPosition = origin + Random.insideUnitCircle * currentMag;
+                yield return null;
+            }
+
+            gameViewRect.anchoredPosition = origin;
+            _shakeRoutine = null;
+        }
+
+        // ─── Rover Color Pulse ───────────────────────────────────────────────────
+
+        private void PulseRoverColor(Color pulseColor)
+        {
+            if (_roverPulseRoutine != null) StopCoroutine(_roverPulseRoutine);
+            _roverPulseRoutine = StartCoroutine(RoverColorPulseRoutine(pulseColor));
+        }
+
+        private IEnumerator RoverColorPulseRoutine(Color pulseColor)
+        {
+            if (!playerImage) yield break;
+
+            const float halfDuration = 0.12f;
+            float elapsed = 0f;
+
+            while (elapsed < halfDuration)
+            {
+                elapsed += Time.deltaTime;
+                playerImage.color = Color.Lerp(Color.white, pulseColor, elapsed / halfDuration);
+                yield return null;
+            }
+
+            elapsed = 0f;
+            while (elapsed < halfDuration)
+            {
+                elapsed += Time.deltaTime;
+                playerImage.color = Color.Lerp(pulseColor, Color.white, elapsed / halfDuration);
+                yield return null;
+            }
+
+            playerImage.color = Color.white;
+            _roverPulseRoutine = null;
         }
 
         // ─── Player Input & Movement ─────────────────────────────────────────────
@@ -739,6 +1066,8 @@ namespace Kiqqi.Framework
                     float step         = roverRotationSpeed * Time.deltaTime;
                     float newAngle     = currentAngle + Mathf.Clamp(delta, -step, step);
                     playerRect.localEulerAngles = new Vector3(0f, 0f, newAngle);
+
+                    TrySpawnSkidmarks(newAngle);
                 }
             }
             else if (isMoving)
@@ -746,6 +1075,69 @@ namespace Kiqqi.Framework
                 isMoving = false;
                 HideDestinationMarker();
             }
+        }
+
+        // ─── Skidmarks ───────────────────────────────────────────────────────────
+
+        /// <summary>Spawns a mark at each wheel transform when the rover has moved far enough.</summary>
+        private void TrySpawnSkidmarks(float roverAngleDeg)
+        {
+            if (!skidmarkPrefab || _wheelRects == null || _wheelRects.Length == 0) return;
+
+            float distanceSinceLast = Vector2.Distance(playerPosition, _lastSkidmarkPosition);
+            if (distanceSinceLast < skidmarkSpawnDistance) return;
+
+            _lastSkidmarkPosition = playerPosition;
+
+            foreach (RectTransform wheel in _wheelRects)
+            {
+                if (!wheel) continue;
+
+                // Convert the wheel's world position into playableArea local (anchored) space
+                Vector2 worldPos = wheel.position;
+                Vector2 localPos;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    playableArea, worldPos, null, out localPos);
+
+                SpawnSkidmark(localPos, roverAngleDeg);
+            }
+        }
+
+        private void SpawnSkidmark(Vector2 anchoredPos, float angleDeg)
+        {
+            Transform parent = skidmarkParent ? skidmarkParent : playableArea;
+            GameObject mark  = Instantiate(skidmarkPrefab, parent);
+
+            RectTransform rt = mark.GetComponent<RectTransform>();
+            if (rt)
+            {
+                rt.anchoredPosition = anchoredPos;
+                rt.localEulerAngles = new Vector3(0f, 0f, angleDeg);
+            }
+
+            mark.SetActive(true);
+            StartCoroutine(FadeOutSkidmark(mark));
+        }
+
+        private IEnumerator FadeOutSkidmark(GameObject mark)
+        {
+            yield return new WaitForSeconds(skidmarkFadeDelay);
+
+            if (mark == null) yield break;
+
+            CanvasGroup cg = mark.GetComponent<CanvasGroup>();
+            if (!cg) cg = mark.AddComponent<CanvasGroup>();
+
+            float elapsed = 0f;
+            while (elapsed < skidmarkFadeDuration)
+            {
+                if (mark == null) yield break;
+                elapsed    += Time.deltaTime;
+                cg.alpha    = Mathf.Lerp(1f, 0f, elapsed / skidmarkFadeDuration);
+                yield return null;
+            }
+
+            if (mark != null) Destroy(mark);
         }
 
         // ─── Destination Marker ───────────────────────────────────────────────────
@@ -828,6 +1220,7 @@ namespace Kiqqi.Framework
             }
 
             HideDestinationMarker();
+            ClearAllMinerals();
             Debug.Log("[KiqqiRoverReflexManager] Reset complete.");
         }
 
@@ -851,6 +1244,7 @@ namespace Kiqqi.Framework
 
             if (playerObject) playerObject.SetActive(false);
             HideDestinationMarker();
+            ClearAllMinerals();
 
             Debug.Log("[KiqqiRoverReflexManager] OnMiniGameExit - cleaned up.");
         }

@@ -23,10 +23,11 @@ namespace Kiqqi.Framework
         [Tooltip("Behavior chances (0-1)")] public float beginnerExpandingChance = 0f;
         public float beginnerChasingChance = 0f;
         public float beginnerChaseSpeed = 0f;
-        [Tooltip("Scoring")] public int beginnerDodgeScore = 50;
+        [Tooltip("Scoring")] public int beginnerPickupScore = 50;
         public int beginnerHitPenalty = 10;
         public int beginnerStreakThreshold = 3;
         public float beginnerStreakMultiplier = 1.5f;
+        [Tooltip("Chance (0-1) a meteor impact drops a mineral")] public float beginnerMineralDropChance = 0.65f;
 
         [Header("═══ EASY (Levels 13-24) ═══")]
         public float easySessionTime = 60f;
@@ -38,10 +39,11 @@ namespace Kiqqi.Framework
         public float easyExpandingChance = 0.2f;
         public float easyChasingChance = 0f;
         public float easyChaseSpeed = 0f;
-        public int easyDodgeScore = 75;
+        public int easyPickupScore = 75;
         public int easyHitPenalty = 25;
         public int easyStreakThreshold = 3;
         public float easyStreakMultiplier = 2.0f;
+        public float easyMineralDropChance = 0.6f;
 
         [Header("═══ MEDIUM (Levels 25-36) ═══")]
         public float mediumSessionTime = 60f;
@@ -53,10 +55,11 @@ namespace Kiqqi.Framework
         public float mediumExpandingChance = 0.3f;
         public float mediumChasingChance = 0.1f;
         public float mediumChaseSpeed = 100f;
-        public int mediumDodgeScore = 100;
+        public int mediumPickupScore = 100;
         public int mediumHitPenalty = 40;
         public int mediumStreakThreshold = 4;
         public float mediumStreakMultiplier = 2.5f;
+        public float mediumMineralDropChance = 0.55f;
 
         [Header("═══ ADVANCED (Levels 37-48) ═══")]
         public float advancedSessionTime = 60f;
@@ -68,10 +71,11 @@ namespace Kiqqi.Framework
         public float advancedExpandingChance = 0.3f;
         public float advancedChasingChance = 0.25f;
         public float advancedChaseSpeed = 150f;
-        public int advancedDodgeScore = 150;
+        public int advancedPickupScore = 150;
         public int advancedHitPenalty = 60;
         public int advancedStreakThreshold = 5;
         public float advancedStreakMultiplier = 3.0f;
+        public float advancedMineralDropChance = 0.5f;
 
         [Header("═══ HARD (Levels 49-60) ═══")]
         public float hardSessionTime = 60f;
@@ -83,10 +87,11 @@ namespace Kiqqi.Framework
         public float hardExpandingChance = 0.4f;
         public float hardChasingChance = 0.35f;
         public float hardChaseSpeed = 200f;
-        public int hardDodgeScore = 200;
+        public int hardPickupScore = 200;
         public int hardHitPenalty = 80;
         public int hardStreakThreshold = 6;
         public float hardStreakMultiplier = 4.0f;
+        public float hardMineralDropChance = 0.45f;
 
         #endregion
 
@@ -224,16 +229,29 @@ namespace Kiqqi.Framework
 
         #region SCORING & PENALTIES
 
-        public int GetDodgeScore(int level)
+        public int GetPickupScore(int level)
         {
             return GetCurrentDifficulty(level) switch
             {
-                KiqqiLevelManager.KiqqiDifficulty.Beginner => beginnerDodgeScore,
-                KiqqiLevelManager.KiqqiDifficulty.Easy => easyDodgeScore,
-                KiqqiLevelManager.KiqqiDifficulty.Medium => mediumDodgeScore,
-                KiqqiLevelManager.KiqqiDifficulty.Advanced => advancedDodgeScore,
-                KiqqiLevelManager.KiqqiDifficulty.Hard => hardDodgeScore,
-                _ => beginnerDodgeScore
+                KiqqiLevelManager.KiqqiDifficulty.Beginner => beginnerPickupScore,
+                KiqqiLevelManager.KiqqiDifficulty.Easy => easyPickupScore,
+                KiqqiLevelManager.KiqqiDifficulty.Medium => mediumPickupScore,
+                KiqqiLevelManager.KiqqiDifficulty.Advanced => advancedPickupScore,
+                KiqqiLevelManager.KiqqiDifficulty.Hard => hardPickupScore,
+                _ => beginnerPickupScore
+            };
+        }
+
+        public float GetMineralDropChance(int level)
+        {
+            return GetCurrentDifficulty(level) switch
+            {
+                KiqqiLevelManager.KiqqiDifficulty.Beginner => beginnerMineralDropChance,
+                KiqqiLevelManager.KiqqiDifficulty.Easy => easyMineralDropChance,
+                KiqqiLevelManager.KiqqiDifficulty.Medium => mediumMineralDropChance,
+                KiqqiLevelManager.KiqqiDifficulty.Advanced => advancedMineralDropChance,
+                KiqqiLevelManager.KiqqiDifficulty.Hard => hardMineralDropChance,
+                _ => beginnerMineralDropChance
             };
         }
 
