@@ -255,6 +255,9 @@ namespace Kiqqi.Framework
         private Coroutine _roverPulseRoutine;
         private Coroutine _shakeRoutine;
 
+        // Tracks all live impact particle instances so we can clean them up between rounds
+        private readonly List<GameObject> _liveImpactParticles = new List<GameObject>();
+
         // ─── Framework ───────────────────────────────────────────────────────────
 
         public override System.Type GetAssociatedViewType() => typeof(KiqqiRoverReflexView);
@@ -361,10 +364,16 @@ namespace Kiqqi.Framework
             if (playerImage && roverSprite)
                 playerImage.sprite = roverSprite;
 
+            // Always reset to center and hide until gameplay begins
             if (playerRect)
-                playerPosition = playerRect.anchoredPosition;
+            {
+                playerRect.anchoredPosition = Vector2.zero;
+                playerRect.localEulerAngles = Vector3.zero;
+            }
+            playerPosition       = Vector2.zero;
+            playerTargetPosition = Vector2.zero;
 
-            playerTargetPosition = playerPosition;
+            playerObject.SetActive(false);
 
             // Cache wheel emission point RectTransforms
             if (wheelTransformNames != null && wheelTransformNames.Length > 0)
@@ -844,7 +853,15 @@ namespace Kiqqi.Framework
             if (ps) ps.Play();
 
             float destroyDelay = ps ? ps.main.duration + ps.main.startLifetime.constantMax + 0.1f : 2f;
+            _liveImpactParticles.Add(instance);
             Destroy(instance, destroyDelay);
+        }
+
+        private void ClearAllImpactParticles()
+        {
+            foreach (GameObject p in _liveImpactParticles)
+                if (p) Destroy(p);
+            _liveImpactParticles.Clear();
         }
 
         // ─── Mineral Pickups ─────────────────────────────────────────────────────
@@ -1166,6 +1183,7 @@ namespace Kiqqi.Framework
             inputEnabled  = false;
             HideDestinationMarker();
             ClearAllMinerals();
+            ClearAllImpactParticles();
 
             // Snap rover color back in case a pulse was mid-flight
             if (_roverPulseRoutine != null) { StopCoroutine(_roverPulseRoutine); _roverPulseRoutine = null; }
@@ -1174,6 +1192,9 @@ namespace Kiqqi.Framework
             // Stop any in-progress shake and restore view position
             if (_shakeRoutine != null) { StopCoroutine(_shakeRoutine); _shakeRoutine = null; }
             if (gameViewRect) gameViewRect.anchoredPosition = Vector2.zero;
+
+            // Hide rover so it's not visible during results screen or next countdown
+            if (playerObject) playerObject.SetActive(false);
 
             Debug.Log($"[KiqqiRoverReflexManager] Session ended. Score: {sessionScore}");
 
@@ -1231,6 +1252,7 @@ namespace Kiqqi.Framework
 
             HideDestinationMarker();
             ClearAllMinerals();
+            ClearAllImpactParticles();
             Debug.Log("[KiqqiRoverReflexManager] Reset complete.");
         }
 
@@ -1255,6 +1277,7 @@ namespace Kiqqi.Framework
             if (playerObject) playerObject.SetActive(false);
             HideDestinationMarker();
             ClearAllMinerals();
+            ClearAllImpactParticles();
 
             Debug.Log("[KiqqiRoverReflexManager] OnMiniGameExit - cleaned up.");
         }
