@@ -72,6 +72,29 @@ namespace Kiqqi.Framework
 
     public class KiqqiRoverReflexManager : KiqqiMiniGameManagerBase
     {
+        // ─── Tutorial Mode ───────────────────────────────────────────────────────
+
+        private const string TutorialShownKey = "roverreflex_tutorial_shown_once";
+
+        [Header("Tutorial Mode")]
+        [Tooltip("When true this manager instance runs tutorial flow instead of normal gameplay.")]
+        public bool isTutorialMode;
+
+        [Tooltip("Auto-start tutorial on first-ever launch via PlayerPrefs flag.")]
+        public bool tutAutoStartOnFirstRun = true;
+
+        [Tooltip("Min anchored distance from player the first tutorial meteor must land.")]
+        public float tutMeteorMinDist = 220f;
+
+        [Tooltip("Min anchored distance from player the second (hint) meteor must land.")]
+        public float tutSecondMeteorMinDist = 180f;
+
+        [Tooltip("Seconds after the second impact before ending the tutorial.")]
+        public float tutEndDelay = 2.5f;
+
+        [Tooltip("Canvas-unit Y offset applied to the hand icon below the ore spawn.")]
+        public float tutHandIconOffsetY = -70f;
+
         // ─── Inspector ───────────────────────────────────────────────────────────
 
         [Header("Level Manager Reference")]
@@ -258,6 +281,14 @@ namespace Kiqqi.Framework
         // Tracks all live impact particle instances so we can clean them up between rounds
         private readonly List<GameObject> _liveImpactParticles = new List<GameObject>();
 
+        // ─── Tutorial Runtime State ──────────────────────────────────────────────
+
+        private bool _tutorialActive;
+        private bool _firstMineralPickedUp;
+        private bool _tutorialEnding;
+        private bool _tutForceNextMineralDrop;
+        private bool _tutSuppressNextMineralDrop;
+
         // ─── Framework ───────────────────────────────────────────────────────────
 
         public override System.Type GetAssociatedViewType() => typeof(KiqqiRoverReflexView);
@@ -280,7 +311,23 @@ namespace Kiqqi.Framework
             InitializeImpactPool();
             InitializePlayer();
 
-            Debug.Log("[KiqqiRoverReflexManager] Initialized.");
+            if (isTutorialMode && view != null)
+            {
+                view.IsTutorialMode = true;
+
+                // Wire skip button once
+                if (view.tutSkipBtn != null)
+                {
+                    var btn = view.tutSkipBtn.GetComponent<UnityEngine.UI.Button>();
+                    if (btn)
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(OnSkipPressed);
+                    }
+                }
+            }
+
+            Debug.Log($"[KiqqiRoverReflexManager] Initialized (tutorialMode={isTutorialMode}).");
         }
 
         // ─── Pool Init ───────────────────────────────────────────────────────────
@@ -424,6 +471,16 @@ namespace Kiqqi.Framework
             sessionEnding = false;
             isMoving      = false;
 
+            if (isTutorialMode)
+            {
+                _tutorialActive       = true;
+                _firstMineralPickedUp = false;
+                _tutorialEnding       = false;
+                if (app?.Levels != null) app.Levels.currentLevel = 1;
+                masterGame.State = KiqqiGameManager.GameState.Tutorial;
+                MarkTutorialShown();
+            }
+
             currentLevel = app.Levels ? app.Levels.currentLevel : 1;
             LoadLevelSettings();
 
@@ -450,7 +507,7 @@ namespace Kiqqi.Framework
 
             sessionRoutine = StartCoroutine(RunSession());
 
-            Debug.Log($"[KiqqiRoverReflexManager] Session started - Level {currentLevel}");
+            Debug.Log($"[KiqqiRoverReflexManager] Session started - Level {currentLevel}, tutorial={isTutorialMode}");
         }
 
         protected virtual void LoadLevelSettings()
@@ -469,6 +526,12 @@ namespace Kiqqi.Framework
 
         protected virtual IEnumerator RunSession()
         {
+            if (isTutorialMode)
+            {
+                yield return StartCoroutine(RunTutorialSession());
+                yield break;
+            }
+
             yield return new WaitForSeconds(0.5f);
 
             inputEnabled = true;
@@ -498,11 +561,146 @@ namespace Kiqqi.Framework
 
             yield return new WaitForSeconds(0.3f);
 
-            // Time is up — force-clear all remaining zones immediately so we don't stall
             foreach (var zone in activeZones) zone.Reset();
             activeZones.Clear();
 
             EndSession();
+        }
+
+        // ─── Tutorial Session ────────────────────────────────────────────────────
+
+        private IEnumerator RunTutorialSession()
+        {
+            yield return new WaitForSeconds(0.5f);
+            inputEnabled = true;
+
+            // ── 1. Spawn first meteor with guaranteed mineral drop ─────────────────
+            _tutForceNextMineralDrop    = true;
+            _tutSuppressNextMineralDrop = false;
+            DangerZone firstZone = SpawnTutorialMeteor(tutMeteorMinDist);
+
+            if (firstZone == null)
+            {
+                Debug.LogError("[KiqqiRoverReflexManager] Tutorial: could not spawn first meteor.");
+                EndTutorial();
+                yield break;
+            }
+
+            while (!firstZone.meteorArrived && firstZone.isActive && _tutorialActive)
+            {
+                UpdatePlayerMovement();
+                UpdateActiveZones();
+                UpdateMineralPickups();
+                yield return null;
+            }
+
+            yield return new WaitForSeconds(0.15f);
+            if (!_tutorialActive) yield break;
+
+            // ── 2. Show step-1 overlay + hand icon, gameplay continues freely ─────
+            if (view != null)
+            {
+                Vector2 orePos = firstZone.rectTransform != null
+                    ? firstZone.rectTransform.anchoredPosition
+                    : Vector2.zero;
+                view.ShowHandIcon(orePos + new Vector2(0f, tutHandIconOffsetY));
+                view.ShowTutorialStep1();
+            }
+
+            // ── 3. Wait for mineral pickup — game runs normally ────────────────────
+            while (!_firstMineralPickedUp && _tutorialActive)
+            {
+                UpdatePlayerMovement();
+                UpdateActiveZones();
+                UpdateMineralPickups();
+                yield return null;
+            }
+
+            if (!_tutorialActive) yield break;
+
+            // ── 4. Show step-2 overlay ────────────────────────────────────────────
+            if (view != null)
+            {
+                view.HideHandIcon();
+                view.ShowTutorialStep2();
+            }
+
+            yield return new WaitForSeconds(0.6f);
+            if (!_tutorialActive) yield break;
+
+            // ── 5. Spawn second meteor – no mineral, hint only ────────────────────
+            _tutForceNextMineralDrop    = false;
+            _tutSuppressNextMineralDrop = true;
+            SpawnTutorialMeteor(tutSecondMeteorMinDist);
+
+            // ── 6. Keep game running for tutEndDelay then end ─────────────────────
+            // We don't gate on meteorArrived — we simply let it play out and end
+            // after a fixed window. This avoids any zone-state edge cases.
+            float waited = 0f;
+            while (waited < tutEndDelay && _tutorialActive)
+            {
+                waited += Time.deltaTime;
+                UpdatePlayerMovement();
+                UpdateActiveZones();
+                UpdateMineralPickups();
+                yield return null;
+            }
+
+            if (!_tutorialActive) yield break;
+            EndTutorial();
+        }
+
+        private DangerZone SpawnTutorialMeteor(float minDistFromPlayer)
+        {
+            if (!playableArea || !levelMgr) return null;
+
+            DangerZone zone = GetAvailableZone();
+            if (zone == null) return null;
+
+            Rect    bounds = playableArea.rect;
+            Vector2 pos    = Vector2.zero;
+
+            for (int i = 0; i < 30; i++)
+            {
+                pos = new Vector2(
+                    Random.Range(bounds.xMin + 100f, bounds.xMax - 100f),
+                    Random.Range(bounds.yMin + 100f, bounds.yMax - 100f));
+                if (Vector2.Distance(pos, playerPosition) >= minDistFromPlayer) break;
+            }
+
+            float radius = Random.Range(zoneRadiusRange.x, zoneRadiusRange.y);
+
+            zone.rectTransform.anchoredPosition = pos;
+
+            if (zone.shadowRect) { zone.shadowRect.anchoredPosition = Vector2.zero; zone.shadowRect.sizeDelta = Vector2.one * radius * 2f; }
+            if (zone.shadowImage) { Color c = zoneWarningColor; c.a = 0f; zone.shadowImage.color = c; }
+            if (zone.meteorRect)
+            {
+                zone.meteorRect.anchoredPosition = Vector2.zero;
+                zone.meteorRect.sizeDelta        = meteorSize;
+                zone.meteorRect.localScale       = new Vector3(0.1f, 0.1f, 1f);
+                zone.meteorRect.localEulerAngles = new Vector3(0f, 0f, Random.Range(0f, 360f));
+                zone.meteorRect.gameObject.SetActive(false);
+            }
+
+            zone.meteorFlyDuration = warningDuration;
+            zone.meteorElapsed     = 0f;
+            zone.meteorArrived     = false;
+            zone.isFlashing        = true;
+            zone.flashElapsed      = 0f;
+            zone.impactElapsed     = 0f;
+            zone.radius            = radius;
+            zone.warningDuration   = warningDuration;
+            zone.elapsedTime       = 0f;
+            zone.isActive          = true;
+            zone.isDangerous       = false;
+            zone.behavior          = DangerZoneBehavior.Static;
+
+            zone.gameObject.SetActive(true);
+            zone.rectTransform.SetAsLastSibling();
+            activeZones.Add(zone);
+
+            return zone;
         }
 
         // ─── Zone Spawning ───────────────────────────────────────────────────────
@@ -710,7 +908,7 @@ namespace Kiqqi.Framework
         /// <summary>Called the frame the meteor arrives at its target. Fires particle, hides meteor, checks hit.</summary>
         protected virtual void TriggerImpact(DangerZone zone)
         {
-            if (zone.isDangerous) return; // already triggered (safety guard)
+            if (zone.isDangerous) return;
             zone.isDangerous = true;
 
             if (zone.meteorRect)
@@ -729,9 +927,31 @@ namespace Kiqqi.Framework
             bool roverWasHit = Vector2.Distance(playerPosition, zone.rectTransform.anchoredPosition)
                                <= zone.radius + playerRadius;
 
-            if (!roverWasHit) TrySpawnMineral(zone);
+            if (!roverWasHit)
+            {
+                if (isTutorialMode)
+                    TrySpawnTutorialMineral(zone);
+                else
+                    TrySpawnMineral(zone);
+            }
+
             TriggerScreenShake(zone.radius);
             CheckPlayerHit(zone);
+        }
+
+        /// <summary>Tutorial mineral spawn: obeys _tutForceNextMineralDrop / _tutSuppressNextMineralDrop flags.</summary>
+        private void TrySpawnTutorialMineral(DangerZone zone)
+        {
+            if (!mineralPickupTemplate || mineralSprites == null || mineralSprites.Length == 0) return;
+            if (_tutSuppressNextMineralDrop) { _tutSuppressNextMineralDrop = false; return; }
+
+            bool drop = _tutForceNextMineralDrop
+                || (levelMgr != null && Random.value <= levelMgr.GetMineralDropChance(currentLevel));
+
+            _tutForceNextMineralDrop = false;
+
+            if (!drop) return;
+            SpawnMineralAt(zone);
         }
 
         protected virtual void CheckPlayerHit(DangerZone zone)
@@ -753,6 +973,16 @@ namespace Kiqqi.Framework
 
         protected virtual void OnPlayerHit(DangerZone zone)
         {
+            KiqqiAppManager.Instance.Audio.PlaySfx("answerwrong");
+            PulseRoverColor(Color.red);
+
+            if (isTutorialMode)
+            {
+                // Tutorial: NOK feedback only — no penalty, no streak reset
+                Debug.Log("[KiqqiRoverReflexManager] Tutorial hit – no penalty.");
+                return;
+            }
+
             if (!levelMgr) return;
 
             int penalty   = levelMgr.GetHitPenalty(currentLevel);
@@ -764,9 +994,6 @@ namespace Kiqqi.Framework
                 view.UpdateStreakDisplay(currentStreak, 1f);
                 RefreshScore();
             }
-
-            KiqqiAppManager.Instance.Audio.PlaySfx("answerwrong");
-            PulseRoverColor(Color.red);
 
             Debug.Log($"[KiqqiRoverReflexManager] HIT! Penalty -{penalty}, score={sessionScore}");
         }
@@ -871,8 +1098,13 @@ namespace Kiqqi.Framework
         {
             if (!mineralPickupTemplate || mineralSprites == null || mineralSprites.Length == 0) return;
             if (!levelMgr) return;
-
             if (Random.value > levelMgr.GetMineralDropChance(currentLevel)) return;
+            SpawnMineralAt(zone);
+        }
+
+        private void SpawnMineralAt(DangerZone zone)
+        {
+            if (!mineralPickupTemplate) return;
 
             Transform parent = mineralPickupParent
                 ? mineralPickupParent
@@ -883,7 +1115,6 @@ namespace Kiqqi.Framework
             RectTransform rt = mineral.GetComponent<RectTransform>();
             if (rt)
             {
-                // Convert zone world position to parent-local anchored space
                 RectTransform parentRt = parent.GetComponent<RectTransform>();
                 if (parentRt != null)
                 {
@@ -931,6 +1162,16 @@ namespace Kiqqi.Framework
         {
             Destroy(mineral);
 
+            KiqqiAppManager.Instance.Audio.PlaySfx("answercorrect");
+            PulseRoverColor(Color.green);
+
+            if (isTutorialMode)
+            {
+                _firstMineralPickedUp = true;
+                Debug.Log("[KiqqiRoverReflexManager] Tutorial mineral pickup – unfreezing.");
+                return;
+            }
+
             if (!levelMgr) return;
 
             int earned    = levelMgr.GetPickupScore(currentLevel);
@@ -944,9 +1185,6 @@ namespace Kiqqi.Framework
                         ? levelMgr.GetStreakMultiplier(currentLevel) : 1f);
                 RefreshScore();
             }
-
-            KiqqiAppManager.Instance.Audio.PlaySfx("answercorrect");
-            PulseRoverColor(Color.green);
 
             Debug.Log($"[KiqqiRoverReflexManager] Mineral pickup +{earned}, score={sessionScore}");
         }
@@ -1185,15 +1423,12 @@ namespace Kiqqi.Framework
             ClearAllMinerals();
             ClearAllImpactParticles();
 
-            // Snap rover color back in case a pulse was mid-flight
             if (_roverPulseRoutine != null) { StopCoroutine(_roverPulseRoutine); _roverPulseRoutine = null; }
             if (playerImage) playerImage.color = Color.white;
 
-            // Stop any in-progress shake and restore view position
             if (_shakeRoutine != null) { StopCoroutine(_shakeRoutine); _shakeRoutine = null; }
             if (gameViewRect) gameViewRect.anchoredPosition = Vector2.zero;
 
-            // Hide rover so it's not visible during results screen or next countdown
             if (playerObject) playerObject.SetActive(false);
 
             Debug.Log($"[KiqqiRoverReflexManager] Session ended. Score: {sessionScore}");
@@ -1203,8 +1438,87 @@ namespace Kiqqi.Framework
 
         public void NotifyTimeUp()
         {
+            if (isTutorialMode) return; // no timer end in tutorial
             if (sessionEnding) return;
             sessionEnding = true;
+        }
+
+        // ─── Tutorial End ─────────────────────────────────────────────────────────
+
+        /// <summary>Auto-start support: returns true if tutorial should launch on this session.</summary>
+        public bool ShouldAutoStartTutorial()
+        {
+            if (!tutAutoStartOnFirstRun) return false;
+            return PlayerPrefs.GetInt(TutorialShownKey, 0) == 0;
+        }
+
+        /// <summary>Marks tutorial as done — won't auto-start again.</summary>
+        public void MarkTutorialShown()
+        {
+            PlayerPrefs.SetInt(TutorialShownKey, 1);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Resets shown flag for testing.</summary>
+        public void ResetTutorialFlagForTesting()
+        {
+            PlayerPrefs.DeleteKey(TutorialShownKey);
+        }
+
+        private void OnSkipPressed()
+        {
+            if (_tutorialEnding) return;
+            Debug.Log("[KiqqiRoverReflexManager] Tutorial skipped.");
+            EndTutorial();
+        }
+
+        /// <summary>Cleans up tutorial state and transitions to KiqqiTutorialEndView.</summary>
+        public void EndTutorial()
+        {
+            if (_tutorialEnding) return;
+            _tutorialEnding = true;
+            _tutorialActive = false;
+
+            Time.timeScale = 1f;
+
+            if (sessionRoutine != null) { StopCoroutine(sessionRoutine); sessionRoutine = null; }
+
+            sessionEnding = true;
+            inputEnabled  = false;
+
+            HideDestinationMarker();
+            ClearAllMinerals();
+            ClearAllImpactParticles();
+
+            if (_roverPulseRoutine != null) { StopCoroutine(_roverPulseRoutine); _roverPulseRoutine = null; }
+            if (playerImage) playerImage.color = Color.white;
+
+            if (_shakeRoutine != null) { StopCoroutine(_shakeRoutine); _shakeRoutine = null; }
+            if (gameViewRect) gameViewRect.anchoredPosition = Vector2.zero;
+
+            foreach (var zone in activeZones) zone.Reset();
+            activeZones.Clear();
+
+            if (playerObject) playerObject.SetActive(false);
+
+            if (view != null) view.ResetTutorialUI();
+
+            isComplete = true;
+            isActive   = false;
+
+            StartCoroutine(ShowTutorialEndDelayed());
+        }
+
+        private System.Collections.IEnumerator ShowTutorialEndDelayed()
+        {
+            yield return new WaitForEndOfFrame();
+
+            // Reset mode flag before transitioning so normal play is clean afterwards
+            isTutorialMode = false;
+
+            // Let UIManager drive the transition — it will hide the active view and show the end view
+            KiqqiAppManager.Instance.UI.ShowView<KiqqiTutorialEndView>();
+            Debug.Log("[KiqqiRoverReflexManager] Tutorial ended – showing KiqqiTutorialEndView.");
         }
 
         public void ResumeFromPause(KiqqiRoverReflexView v)
@@ -1226,6 +1540,11 @@ namespace Kiqqi.Framework
         public override void ResetMiniGame()
         {
             base.ResetMiniGame();
+
+            Time.timeScale    = 1f;
+            _tutorialActive   = false;
+            _tutorialEnding   = false;
+            _firstMineralPickedUp = false;
 
             if (sessionRoutine != null)
             {
@@ -1253,12 +1572,19 @@ namespace Kiqqi.Framework
             HideDestinationMarker();
             ClearAllMinerals();
             ClearAllImpactParticles();
+
+            if (view != null) view.ResetTutorialUI();
+
             Debug.Log("[KiqqiRoverReflexManager] Reset complete.");
         }
 
         public override void OnMiniGameExit()
         {
             base.OnMiniGameExit();
+
+            Time.timeScale  = 1f;
+            _tutorialActive = false;
+            _tutorialEnding = true;
 
             if (sessionRoutine != null)
             {
@@ -1279,7 +1605,9 @@ namespace Kiqqi.Framework
             ClearAllMinerals();
             ClearAllImpactParticles();
 
-            Debug.Log("[KiqqiRoverReflexManager] OnMiniGameExit - cleaned up.");
+            if (view != null) view.ResetTutorialUI();
+
+            Debug.Log("[KiqqiRoverReflexManager] OnMiniGameExit – cleaned up.");
         }
     }
 }

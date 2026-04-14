@@ -51,7 +51,9 @@ namespace Kiqqi.Framework
 
             // ---- clean up active tutorial ----
             var activeMini = gm.currentMiniGame;
-            if (activeMini is KiqqiPokerFaceTutorialManager pfTut)
+            if (activeMini is KiqqiRoverReflexManager rrMgr && rrMgr.isTutorialMode)
+                rrMgr.MarkTutorialShown();
+            else if (activeMini is KiqqiPokerFaceTutorialManager pfTut)
                 pfTut.MarkTutorialShown();
             else if (activeMini is KiqqiTicTacToeTutorialManager ttTut)
                 ttTut.MarkTutorialShown();

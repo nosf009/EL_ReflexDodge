@@ -67,20 +67,26 @@ namespace Kiqqi.Framework
 
             bool shouldStartTutorial = false;
 
-            // check for any tutorial manager that should auto-start
+            // Check for any tutorial manager that should auto-start
             if (gameManager != null && gameManager.tutorialGameManager != null)
             {
-                if (gameManager.tutorialGameManager is KiqqiPokerFaceTutorialManager pfTut &&
+                if (gameManager.tutorialGameManager is KiqqiRoverReflexManager rrMgr &&
+                    rrMgr.isTutorialMode && rrMgr.ShouldAutoStartTutorial())
+                {
+                    shouldStartTutorial = true;
+                    Debug.Log("[KiqqiAppManager] RoverReflex tutorial will auto-start.");
+                }
+                else if (gameManager.tutorialGameManager is KiqqiPokerFaceTutorialManager pfTut &&
                     pfTut.ShouldAutoStartTutorial())
                 {
                     shouldStartTutorial = true;
-                    Debug.Log("[KiqqiAppManager] Poker Face tutorial will auto-start (skipping main menu).");
+                    Debug.Log("[KiqqiAppManager] Poker Face tutorial will auto-start.");
                 }
                 else if (gameManager.tutorialGameManager is KiqqiTicTacToeTutorialManager ttTut &&
                          ttTut.ShouldAutoStartTutorial())
                 {
                     shouldStartTutorial = true;
-                    Debug.Log("[KiqqiAppManager] Tic-Tac-Toe tutorial will auto-start (skipping main menu).");
+                    Debug.Log("[KiqqiAppManager] Tic-Tac-Toe tutorial will auto-start.");
                 }
             }
 
@@ -101,7 +107,7 @@ namespace Kiqqi.Framework
         {
             if (Data == null || Data.gameDefinition == null)
             {
-                Debug.LogWarning("[KiqqiAppManager] No GameDefinition found in DataManager — skipping propagation.");
+                Debug.LogWarning("[KiqqiAppManager] No GameDefinition found in DataManager ï¿½ skipping propagation.");
                 return;
             }
 

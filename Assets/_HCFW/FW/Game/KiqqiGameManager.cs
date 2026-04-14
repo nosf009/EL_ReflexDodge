@@ -81,23 +81,30 @@ namespace Kiqqi.Framework
         /// </summary>
         public void StartTutorial()
         {
-            if (tutorialAlreadyStarted)
-            {
-                Debug.Log("[KiqqiGameManager] Tutorial start called, skip...");
-                return;
-            }
-            tutorialAlreadyStarted = true;
-
             if (tutorialGameManager == null)
             {
                 Debug.LogWarning("[KiqqiGameManager] TutorialGameManager not assigned!");
                 return;
             }
 
+            // Reset session so this can be called from pause menu or main menu at any time
+            tutorialAlreadyStarted = false;
+            _alreadyEnded          = false;
+            CurrentScore           = 0;
+            RestartRequested       = false;
+            ResumeRequested        = false;
+            currentMiniGame        = null;
+
+            tutorialAlreadyStarted = true;
+
+            // If the tutorial manager is the same component as the main game manager,
+            // activate tutorial mode before Initialize() reads it.
+            if (tutorialGameManager is KiqqiRoverReflexManager rrMgr)
+                rrMgr.isTutorialMode = true;
+
             Debug.Log("[KiqqiGameManager] Starting tutorial...");
 
             tutorialGameManager.ResetMiniGame();
-            _alreadyEnded = false;
 
             ForceHideAll(app.UI);
             State = GameState.Tutorial;
@@ -166,7 +173,7 @@ namespace Kiqqi.Framework
 
             if (_alreadyEnded)
             {
-                Debug.LogWarning("[KiqqiGameManager] EndGame called again — ignored.");
+                Debug.LogWarning("[KiqqiGameManager] EndGame called again ï¿½ ignored.");
                 return;
             }
             _alreadyEnded = true;
@@ -199,6 +206,14 @@ namespace Kiqqi.Framework
             _alreadyEnded = false;
             RestartRequested = false;
             ResumeRequested = false;
+
+            // Clear tutorial mode so normal play is unaffected
+            if (tutorialGameManager is KiqqiRoverReflexManager rrMgr)
+                rrMgr.isTutorialMode = false;
+
+            if (mainGameManager is KiqqiRoverReflexManager rrMain)
+                rrMain.isTutorialMode = false;
+
             currentMiniGame = null;
             tutorialAlreadyStarted = false;
             State = GameState.None;

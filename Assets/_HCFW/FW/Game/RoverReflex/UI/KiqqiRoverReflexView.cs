@@ -18,6 +18,19 @@ namespace Kiqqi.Framework
         [Header("Playable Area")]
         public RectTransform playableAreaRect;
 
+        [Header("Tutorial UI")]
+        public GameObject tutTimePanelToHide;
+        public GameObject tutScorePanelToHide;
+        public GameObject tutPauseBtnToHide;
+        public GameObject tutSkipBtn;
+        public GameObject tutOverlay;
+        public GameObject tutInfoText1;
+        public GameObject tutInfoText2;
+        public RectTransform handIconObjectForTut;
+
+        // Set by KiqqiRoverReflexTutorialManager before OnShow is called
+        public bool IsTutorialMode { get; set; }
+
         private KiqqiRoverReflexManager manager;
 
         public void BindManager(KiqqiRoverReflexManager m)
@@ -41,14 +54,10 @@ namespace Kiqqi.Framework
             }
 
             if (streakContainer)
-            {
                 streakContainer.SetActive(false);
-            }
 
             if (streakText)
-            {
                 streakText.text = "";
-            }
 
             if (gameplayBackground)
             {
@@ -58,7 +67,104 @@ namespace Kiqqi.Framework
                 gameplayBackground.gameObject.SetActive(false);
             }
 
+            // Apply tutorial mode UI overrides before base.OnShow() starts the countdown
+            if (IsTutorialMode)
+                ApplyTutorialUIState();
+
             base.OnShow();
+        }
+
+        /// <summary>Configures the HUD for tutorial mode: hides score/time/pause, shows skip (non-interactable).</summary>
+        private void ApplyTutorialUIState()
+        {
+            if (tutTimePanelToHide)  tutTimePanelToHide.SetActive(false);
+            if (tutScorePanelToHide) tutScorePanelToHide.SetActive(false);
+            if (tutPauseBtnToHide)   tutPauseBtnToHide.SetActive(false);
+
+            if (tutSkipBtn)
+            {
+                tutSkipBtn.SetActive(true);
+                var btn = tutSkipBtn.GetComponent<Button>();
+                if (btn) btn.interactable = false; // enabled after countdown
+            }
+
+            if (tutOverlay)   tutOverlay.SetActive(false);
+            if (tutInfoText1) tutInfoText1.SetActive(false);
+            if (tutInfoText2) tutInfoText2.SetActive(false);
+            if (handIconObjectForTut) handIconObjectForTut.gameObject.SetActive(false);
+        }
+
+        /// <summary>Called by tutorial manager after countdown: enables skip button.</summary>
+        public void EnableSkipButton()
+        {
+            if (!tutSkipBtn) return;
+            var btn = tutSkipBtn.GetComponent<Button>();
+            if (btn) btn.interactable = true;
+        }
+
+        /// <summary>Shows/hides the tutorial instruction overlay panel.</summary>
+        public void SetTutorialOverlayActive(bool active)
+        {
+            if (tutOverlay) tutOverlay.SetActive(active);
+        }
+
+        /// <summary>Shows step 1 text, hides step 2. Call after countdown when paused.</summary>
+        public void ShowTutorialStep1()
+        {
+            if (tutInfoText1) tutInfoText1.SetActive(true);
+            if (tutInfoText2) tutInfoText2.SetActive(false);
+            SetTutorialOverlayActive(true);
+        }
+
+        /// <summary>Shows step 2 text, hides step 1. Call after mineral pickup.</summary>
+        public void ShowTutorialStep2()
+        {
+            if (tutInfoText1) tutInfoText1.SetActive(false);
+            if (tutInfoText2) tutInfoText2.SetActive(true);
+            SetTutorialOverlayActive(true);
+        }
+
+        /// <summary>Hides both instruction texts and overlay panel.</summary>
+        public void HideTutorialOverlay()
+        {
+            SetTutorialOverlayActive(false);
+            if (tutInfoText1) tutInfoText1.SetActive(false);
+            if (tutInfoText2) tutInfoText2.SetActive(false);
+        }
+
+        /// <summary>Positions and shows the hand icon at the given anchored position within the view.</summary>
+        public void ShowHandIcon(Vector2 anchoredPos)
+        {
+            if (!handIconObjectForTut) return;
+            handIconObjectForTut.anchoredPosition = anchoredPos;
+            handIconObjectForTut.gameObject.SetActive(true);
+        }
+
+        /// <summary>Hides the tutorial hand icon.</summary>
+        public void HideHandIcon()
+        {
+            if (handIconObjectForTut)
+                handIconObjectForTut.gameObject.SetActive(false);
+        }
+
+        /// <summary>Full cleanup of all tutorial UI — call before EndSession to leave view in a clean state.</summary>
+        public void ResetTutorialUI()
+        {
+            IsTutorialMode = false;
+
+            if (tutTimePanelToHide)  tutTimePanelToHide.SetActive(true);
+            if (tutScorePanelToHide) tutScorePanelToHide.SetActive(true);
+            if (tutPauseBtnToHide)   tutPauseBtnToHide.SetActive(true);
+
+            if (tutSkipBtn)
+            {
+                var btn = tutSkipBtn.GetComponent<Button>();
+                if (btn) btn.interactable = false;
+                tutSkipBtn.SetActive(false);
+            }
+
+            HideTutorialOverlay();
+            HideHandIcon();
         }
 
         public override void OnHide()
@@ -66,9 +172,10 @@ namespace Kiqqi.Framework
             base.OnHide();
 
             if (streakContainer)
-            {
                 streakContainer.SetActive(false);
-            }
+
+            if (IsTutorialMode)
+                ResetTutorialUI();
 
             if (manager != null)
             {
@@ -140,17 +247,33 @@ namespace Kiqqi.Framework
 
             yield return new WaitForSecondsRealtime(0.2f);
 
-            if (pauseButton)
-                pauseButton.interactable = true;
-
-            var gm = KiqqiAppManager.Instance.Game;
-            if (gm?.currentMiniGame is KiqqiRoverReflexManager rdm)
+            if (IsTutorialMode)
             {
-                manager = rdm;
-                rdm.StartMiniGame();
-            }
+                // Tutorial: stop the base timer immediately, enable skip, let manager drive from here
+                StopTimer();
+                EnableSkipButton();
 
-            timerRunning = true;
+                if (KiqqiAppManager.Instance.Game?.currentMiniGame is KiqqiRoverReflexManager tutMgr
+                    && tutMgr.isTutorialMode)
+                {
+                    manager = tutMgr;
+                    tutMgr.StartMiniGame();
+                }
+            }
+            else
+            {
+                if (pauseButton)
+                    pauseButton.interactable = true;
+
+                var gm = KiqqiAppManager.Instance.Game;
+                if (gm?.currentMiniGame is KiqqiRoverReflexManager rdm)
+                {
+                    manager = rdm;
+                    rdm.StartMiniGame();
+                }
+
+                timerRunning = true;
+            }
         }
 
         public void OnPointerDown(PointerEventData eventData)
