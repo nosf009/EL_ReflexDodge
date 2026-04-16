@@ -7,7 +7,7 @@
     "entries": [
         {
             "key": "pfsubtitletext",
-            "text": "Catch the right falling fruits and adapt quickly to changing rules to train cognitive flexibility.",
+            "text": "Test your reflexes as you dodge meteors and collect valuable ore.",
             "isDynamic": false
         },
         {
@@ -92,12 +92,12 @@
         },
         {
             "key": "pftutinfotext",
-            "text": "Tap the correct fruits as they fall and collect only the ones marked on the bucket.",
+            "text": "Tap the screen to move the rover and collect ore to score.",
             "isDynamic": false
         },
         {
             "key": "temodalpaneltext",
-            "text": "Well done. Pay attention to the different fruit types to spot them quickly and pick the right ones.",
+            "text": "Stay alert, avoid meteors, and collect as much ore as you can.",
             "isDynamic": false
         },
         {

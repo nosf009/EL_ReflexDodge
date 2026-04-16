@@ -86,8 +86,9 @@ namespace Kiqqi.Framework
 
             Debug.Log($"[KiqqiMiniGameManagerBase] CompleteMiniGame ({displayName}) score={finalScore} won={playerWon}");
 
-            // Inform GameManager once
-            masterGame.AddScore(finalScore);
+            // Inform GameManager once — set directly to avoid doubling when score
+            // is already kept in sync live via RefreshScore() during gameplay.
+            masterGame.CurrentScore = finalScore;
             masterGame.EndGame(playerWon);
 
             // Show results exactly once

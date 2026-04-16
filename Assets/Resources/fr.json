@@ -7,7 +7,7 @@
     "entries": [
         {
             "key": "pfsubtitletext",
-            "text": "Attrape les bons fruits et adapte toi rapidement aux règles changeantes.",
+            "text": "Teste tes réflexes, évite les météores et ramasse du minerai.",
             "isDynamic": false
         },
         {
@@ -92,12 +92,12 @@
         },
         {
             "key": "pftutinfotext",
-            "text": "Tape sur les bons fruits qui tombent et collecte uniquement ceux indiqués sur le seau.",
+            "text": "Touche l'écran pour déplacer le rover et ramasser du minerai pour marquer.",
             "isDynamic": false
         },
         {
             "key": "temodalpaneltext",
-            "text": "Bien joué. Fais attention aux différents types de fruits pour les repérer rapidement et choisir les bons.",
+            "text": "Reste vigilant, évite les météores et ramasse autant de minerai que possible.",
             "isDynamic": false
         },
         {

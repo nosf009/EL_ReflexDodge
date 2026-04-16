@@ -95,6 +95,9 @@ namespace Kiqqi.Framework
         [Tooltip("Canvas-unit Y offset applied to the hand icon below the ore spawn.")]
         public float tutHandIconOffsetY = -70f;
 
+        [Tooltip("Minimum canvas-unit clearance from the bottom edge of the playable area for tutorial meteor landing positions (keeps them above the instruction overlay).")]
+        public float tutMeteorBottomMargin = 300f;
+
         // ─── Inspector ───────────────────────────────────────────────────────────
 
         [Header("Level Manager Reference")]
@@ -664,7 +667,7 @@ namespace Kiqqi.Framework
             {
                 pos = new Vector2(
                     Random.Range(bounds.xMin + 100f, bounds.xMax - 100f),
-                    Random.Range(bounds.yMin + 100f, bounds.yMax - 100f));
+                    Random.Range(bounds.yMin + tutMeteorBottomMargin, bounds.yMax - 100f));
                 if (Vector2.Distance(pos, playerPosition) >= minDistFromPlayer) break;
             }
 

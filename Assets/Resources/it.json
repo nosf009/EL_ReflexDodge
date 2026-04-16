@@ -7,7 +7,7 @@
     "entries": [
         {
             "key": "pfsubtitletext",
-            "text": "Raccogli i frutti giusti e adattati rapidamente alle regole che cambiano.",
+            "text": "Metti alla prova i tuoi riflessi, evita i meteoriti e raccogli minerale.",
             "isDynamic": false
         },
         {
@@ -92,12 +92,12 @@
         },
         {
             "key": "pftutinfotext",
-            "text": "Tocca i frutti giusti che cadono e raccogli solo quelli indicati sul secchio.",
+            "text": "Tocca per muovere il rover e raccogliere minerale per punti.",
             "isDynamic": false
         },
         {
             "key": "temodalpaneltext",
-            "text": "Ottimo lavoro. Presta attenzione ai diversi tipi di frutta per riconoscerli velocemente e scegliere quelli giusti.",
+            "text": "Resta all'erta, evita i meteoriti e raccogli più minerale possibile.",
             "isDynamic": false
         },
         {

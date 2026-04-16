@@ -7,7 +7,7 @@
     "entries": [
         {
             "key": "pfsubtitletext",
-            "text": "Fange die richtigen fallenden Früchte und passe dich schnell wechselnden Regeln an.",
+            "text": "Teste deine Reflexe, weiche Meteoren aus und sammle wertvolles Erz.",
             "isDynamic": false
         },
         {
@@ -92,12 +92,12 @@
         },
         {
             "key": "pftutinfotext",
-            "text": "Tippe auf die richtigen fallenden Früchte und sammle nur die im Eimer markierten.",
+            "text": "Tippe zum Bewegen des Rovers und sammle Erz für Punkte.",
             "isDynamic": false
         },
         {
             "key": "temodalpaneltext",
-            "text": "Gut gemacht. Achte auf die verschiedenen Fruchttypen, um sie schnell zu erkennen und die richtigen auszuwählen.",
+            "text": "Bleib wachsam, weiche Meteoren aus und sammle so viel Erz wie möglich.",
             "isDynamic": false
         },
         {

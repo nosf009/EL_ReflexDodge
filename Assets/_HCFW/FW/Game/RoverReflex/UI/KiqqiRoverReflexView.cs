@@ -67,6 +67,12 @@ namespace Kiqqi.Framework
                 gameplayBackground.gameObject.SetActive(false);
             }
 
+            // Always restore HUD panels first so they're in a clean state,
+            // regardless of whether the previous session was a tutorial.
+            if (tutTimePanelToHide)  tutTimePanelToHide.SetActive(true);
+            if (tutScorePanelToHide) tutScorePanelToHide.SetActive(true);
+            if (tutPauseBtnToHide)   tutPauseBtnToHide.SetActive(true);
+
             // Apply tutorial mode UI overrides before base.OnShow() starts the countdown
             if (IsTutorialMode)
                 ApplyTutorialUIState();
@@ -137,6 +143,7 @@ namespace Kiqqi.Framework
         {
             if (!handIconObjectForTut) return;
             handIconObjectForTut.anchoredPosition = anchoredPos;
+            handIconObjectForTut.SetAsLastSibling();
             handIconObjectForTut.gameObject.SetActive(true);
         }
 
@@ -152,9 +159,9 @@ namespace Kiqqi.Framework
         {
             IsTutorialMode = false;
 
-            if (tutTimePanelToHide)  tutTimePanelToHide.SetActive(true);
-            if (tutScorePanelToHide) tutScorePanelToHide.SetActive(true);
-            if (tutPauseBtnToHide)   tutPauseBtnToHide.SetActive(true);
+            // HUD panels (time, score, pause) are intentionally NOT restored here.
+            // OnShow() always resets them to active before ApplyTutorialUIState() runs,
+            // so restoring here would cause a visible flash when the view deactivates.
 
             if (tutSkipBtn)
             {

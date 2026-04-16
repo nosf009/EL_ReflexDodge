@@ -71,7 +71,7 @@ namespace Kiqqi.Framework
             if (gameManager != null && gameManager.tutorialGameManager != null)
             {
                 if (gameManager.tutorialGameManager is KiqqiRoverReflexManager rrMgr &&
-                    rrMgr.isTutorialMode && rrMgr.ShouldAutoStartTutorial())
+                    rrMgr.ShouldAutoStartTutorial())
                 {
                     shouldStartTutorial = true;
                     Debug.Log("[KiqqiAppManager] RoverReflex tutorial will auto-start.");
