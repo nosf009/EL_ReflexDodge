@@ -394,7 +394,7 @@ namespace Kiqqi.Framework
                 zonePool.Add(zone);
             }
 
-            Debug.Log($"[KiqqiRoverReflexManager] Zone pool: {zonePool.Count} zones.");
+            //Debug.Log($"[KiqqiRoverReflexManager] Zone pool: {zonePool.Count} zones.");
         }
 
         protected virtual void InitializeImpactPool()
@@ -510,7 +510,7 @@ namespace Kiqqi.Framework
 
             sessionRoutine = StartCoroutine(RunSession());
 
-            Debug.Log($"[KiqqiRoverReflexManager] Session started - Level {currentLevel}, tutorial={isTutorialMode}");
+            //Debug.Log($"[KiqqiRoverReflexManager] Session started - Level {currentLevel}, tutorial={isTutorialMode}");
         }
 
         protected virtual void LoadLevelSettings()
@@ -522,7 +522,7 @@ namespace Kiqqi.Framework
             warningDuration = levelMgr.GetWarningDuration(currentLevel);
             zoneRadiusRange = levelMgr.GetZoneRadiusRange(currentLevel);
 
-            Debug.Log($"[KiqqiRoverReflexManager] Level {currentLevel}: interval={spawnInterval}s, maxZones={maxZones}, warning={warningDuration}s");
+            //Debug.Log($"[KiqqiRoverReflexManager] Level {currentLevel}: interval={spawnInterval}s, maxZones={maxZones}, warning={warningDuration}s");
         }
 
         // ─── Session Loop ────────────────────────────────────────────────────────
@@ -774,7 +774,7 @@ namespace Kiqqi.Framework
             zone.rectTransform.SetAsLastSibling();
             activeZones.Add(zone);
 
-            Debug.Log($"[KiqqiRoverReflexManager] Spawned '{zone.gameObject.name}' at {shadowPos}, r={radius}, behavior={zone.behavior}");
+            //Debug.Log($"[KiqqiRoverReflexManager] Spawned '{zone.gameObject.name}' at {shadowPos}, r={radius}, behavior={zone.behavior}");
         }
 
         protected virtual void DetermineBehavior(DangerZone zone)
@@ -998,14 +998,14 @@ namespace Kiqqi.Framework
                 RefreshScore();
             }
 
-            Debug.Log($"[KiqqiRoverReflexManager] HIT! Penalty -{penalty}, score={sessionScore}");
+            //Debug.Log($"[KiqqiRoverReflexManager] HIT! Penalty -{penalty}, score={sessionScore}");
         }
 
         protected virtual void OnSuccessfulDodge(DangerZone zone)
         {
             currentStreak++;
             if (view) view.UpdateStreakDisplay(currentStreak, 1f);
-            Debug.Log($"[KiqqiRoverReflexManager] Dodge (streak:{currentStreak})");
+            //Debug.Log($"[KiqqiRoverReflexManager] Dodge (streak:{currentStreak})");
         }
 
         // ─── Meteor Drop Shadow ──────────────────────────────────────────────────
@@ -1171,7 +1171,7 @@ namespace Kiqqi.Framework
             if (isTutorialMode)
             {
                 _firstMineralPickedUp = true;
-                Debug.Log("[KiqqiRoverReflexManager] Tutorial mineral pickup – unfreezing.");
+                //Debug.Log("[KiqqiRoverReflexManager] Tutorial mineral pickup – unfreezing.");
                 return;
             }
 
@@ -1189,7 +1189,7 @@ namespace Kiqqi.Framework
                 RefreshScore();
             }
 
-            Debug.Log($"[KiqqiRoverReflexManager] Mineral pickup +{earned}, score={sessionScore}");
+            //Debug.Log($"[KiqqiRoverReflexManager] Mineral pickup +{earned}, score={sessionScore}");
         }
 
         private void ClearAllMinerals()
@@ -1434,7 +1434,7 @@ namespace Kiqqi.Framework
 
             if (playerObject) playerObject.SetActive(false);
 
-            Debug.Log($"[KiqqiRoverReflexManager] Session ended. Score: {sessionScore}");
+            //Debug.Log($"[KiqqiRoverReflexManager] Session ended. Score: {sessionScore}");
 
             CompleteMiniGame(sessionScore, sessionScore > 0);
         }
@@ -1471,7 +1471,7 @@ namespace Kiqqi.Framework
         private void OnSkipPressed()
         {
             if (_tutorialEnding) return;
-            Debug.Log("[KiqqiRoverReflexManager] Tutorial skipped.");
+            //Debug.Log("[KiqqiRoverReflexManager] Tutorial skipped.");
             EndTutorial();
         }
 
@@ -1521,7 +1521,7 @@ namespace Kiqqi.Framework
 
             // Let UIManager drive the transition — it will hide the active view and show the end view
             KiqqiAppManager.Instance.UI.ShowView<KiqqiTutorialEndView>();
-            Debug.Log("[KiqqiRoverReflexManager] Tutorial ended – showing KiqqiTutorialEndView.");
+            //Debug.Log("[KiqqiRoverReflexManager] Tutorial ended – showing KiqqiTutorialEndView.");
         }
 
         public void ResumeFromPause(KiqqiRoverReflexView v)
@@ -1578,7 +1578,7 @@ namespace Kiqqi.Framework
 
             if (view != null) view.ResetTutorialUI();
 
-            Debug.Log("[KiqqiRoverReflexManager] Reset complete.");
+            //Debug.Log("[KiqqiRoverReflexManager] Reset complete.");
         }
 
         public override void OnMiniGameExit()
@@ -1610,7 +1610,7 @@ namespace Kiqqi.Framework
 
             if (view != null) view.ResetTutorialUI();
 
-            Debug.Log("[KiqqiRoverReflexManager] OnMiniGameExit – cleaned up.");
+            //Debug.Log("[KiqqiRoverReflexManager] OnMiniGameExit – cleaned up.");
         }
     }
 }

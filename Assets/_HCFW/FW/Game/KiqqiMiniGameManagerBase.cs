@@ -84,7 +84,7 @@ namespace Kiqqi.Framework
             else
                 KiqqiAppManager.Instance.Audio.PlaySfx("answerwrong");
 
-            Debug.Log($"[KiqqiMiniGameManagerBase] CompleteMiniGame ({displayName}) score={finalScore} won={playerWon}");
+           // Debug.Log($"[KiqqiMiniGameManagerBase] CompleteMiniGame ({displayName}) score={finalScore} won={playerWon}");
 
             // Inform GameManager once — set directly to avoid doubling when score
             // is already kept in sync live via RefreshScore() during gameplay.
@@ -102,13 +102,13 @@ namespace Kiqqi.Framework
             isActive = false;
             isComplete = false;
             sessionScore = 0;
-            Debug.Log($"[KiqqiMiniGameManagerBase] ResetMiniGame ({displayName})");
+           // Debug.Log($"[KiqqiMiniGameManagerBase] ResetMiniGame ({displayName})");
         }
 
         /// <summary>Optional: called when leaving or unloading the mini-game scene.</summary>
         public virtual void OnMiniGameExit()
         {
-            Debug.Log($"[KiqqiMiniGameManagerBase] OnMiniGameExit ({displayName})");
+            //Debug.Log($"[KiqqiMiniGameManagerBase] OnMiniGameExit ({displayName})");
         }
 
     }

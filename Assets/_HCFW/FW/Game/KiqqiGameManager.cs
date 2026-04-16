@@ -140,7 +140,7 @@ namespace Kiqqi.Framework
                 return;
             }
 
-            Debug.Log($"[KiqqiGameManager] Starting mini-game: {target.displayName}");
+            //Debug.Log($"[KiqqiGameManager] Starting mini-game: {target.displayName}");
 
             target.Initialize(KiqqiAppManager.Instance);
             currentMiniGame = target;
@@ -173,12 +173,12 @@ namespace Kiqqi.Framework
 
             if (_alreadyEnded)
             {
-                Debug.LogWarning("[KiqqiGameManager] EndGame called again � ignored.");
+                Debug.LogWarning("[KiqqiGameManager] EndGame called again ignored.");
                 return;
             }
             _alreadyEnded = true;
 
-            Debug.Log($"[GameManager] EndGame() called. playerWon={playerWon}, CurrentScore={CurrentScore}");
+            ///Debug.Log($"[GameManager] EndGame() called. playerWon={playerWon}, CurrentScore={CurrentScore}");
 
             State = GameState.Results;
             Debug.Log($"[KiqqiGameManager] Game ended. Final score: {CurrentScore}");
@@ -197,7 +197,7 @@ namespace Kiqqi.Framework
             }
             ResetSession();
             State = GameState.MainMenu;
-            Debug.Log("[KiqqiGameManager] Returned to Main Menu.");
+            //Debug.Log("[KiqqiGameManager] Returned to Main Menu.");
         }
 
         public void ResetSession()

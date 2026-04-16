@@ -47,7 +47,7 @@ namespace Kiqqi.Framework
             var gm = app.Game;
             var ui = app.UI;
 
-            Debug.Log("[KiqqiTutorialEndView] Continue pressed - returning to Main Menu.");
+            //Debug.Log("[KiqqiTutorialEndView] Continue pressed - returning to Main Menu.");
 
             // ---- clean up active tutorial ----
             var activeMini = gm.currentMiniGame;
