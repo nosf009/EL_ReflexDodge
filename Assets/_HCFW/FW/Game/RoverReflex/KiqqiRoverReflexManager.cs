@@ -98,7 +98,8 @@ namespace Kiqqi.Framework
         [Tooltip("Minimum canvas-unit clearance from the bottom edge of the playable area for tutorial meteor landing positions (keeps them above the instruction overlay).")]
         public float tutMeteorBottomMargin = 300f;
 
-        // ─── Inspector ───────────────────────────────────────────────────────────
+        [Tooltip("Maximum danger zone radius for tutorial meteors (caps the normal level-driven radius so the tutorial zone never overlaps the rover by accident).")]
+        public float tutMeteorMaxRadius = 90f;
 
         [Header("Level Manager Reference")]
         [Tooltip("Reference to level manager component")]
@@ -628,7 +629,6 @@ namespace Kiqqi.Framework
                 view.ShowTutorialStep2();
             }
 
-            yield return new WaitForSeconds(0.6f);
             if (!_tutorialActive) yield break;
 
             // ── 5. Spawn second meteor – no mineral, hint only ────────────────────
@@ -671,7 +671,10 @@ namespace Kiqqi.Framework
                 if (Vector2.Distance(pos, playerPosition) >= minDistFromPlayer) break;
             }
 
-            float radius = Random.Range(zoneRadiusRange.x, zoneRadiusRange.y);
+            // Cap radius for tutorial so the danger zone edge never reaches the rover
+            float radius = Mathf.Min(
+                Random.Range(zoneRadiusRange.x, zoneRadiusRange.y),
+                tutMeteorMaxRadius);
 
             zone.rectTransform.anchoredPosition = pos;
 
@@ -930,13 +933,12 @@ namespace Kiqqi.Framework
             bool roverWasHit = Vector2.Distance(playerPosition, zone.rectTransform.anchoredPosition)
                                <= zone.radius + playerRadius;
 
-            if (!roverWasHit)
-            {
-                if (isTutorialMode)
-                    TrySpawnTutorialMineral(zone);
-                else
-                    TrySpawnMineral(zone);
-            }
+            // Always attempt mineral spawn in tutorial regardless of hit,
+            // so the pickup-wait step can never get stuck.
+            if (isTutorialMode)
+                TrySpawnTutorialMineral(zone);
+            else if (!roverWasHit)
+                TrySpawnMineral(zone);
 
             TriggerScreenShake(zone.radius);
             CheckPlayerHit(zone);
